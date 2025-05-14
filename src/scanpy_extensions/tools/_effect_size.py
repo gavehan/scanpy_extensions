@@ -7,7 +7,7 @@ import scanpy as sc
 from scanpy import logging as logg
 
 from .._validate import isiterable, validate_groupby
-from ..get import get_categories, get_fractions
+from ..get import obs_categories, sample_fractions
 
 
 def __cohen_d(x, y):
@@ -31,13 +31,13 @@ def effect_sizes(
 ) -> pd.DataFrame:
     gkey = keys
     validate_groupby(adata, list(groupby) + [gkey])
-    gkey_cats = get_categories(adata, gkey)
+    gkey_cats = obs_categories(adata, gkey)
     assert isiterable(groupby) and len(groupby) == 2, (
         "'groupby' is not a tuple of length 2."
     )
     main_g = groupby[0]
     main_cats = (
-        group_order if group_order is not None else get_categories(adata, main_g)
+        group_order if group_order is not None else obs_categories(adata, main_g)
     )
     assert len(main_cats) == 2, f"'{main_g}' does not have exactly two categories."
 
@@ -46,7 +46,7 @@ def effect_sizes(
     )
     logg.info(f"comparing {main_cats[1]} over {main_cats[0]}")
 
-    df = get_fractions(
+    df = sample_fractions(
         adata, gkey, groupby, totals=totals, return_grouped_fractions=True
     )
     res = {}

@@ -9,11 +9,10 @@ import pandas as pd
 import scanpy as sc
 import seaborn as sns
 from scanpy import logging as logg
-from scanpy._utils import AnyRandom
 
-from .._utilities import update_config
+from .._utilities import RandomState, update_config
 from .._validate import isiterable, validate_groupby
-from ..get import get_categories, get_fractions
+from ..get import obs_categories, sample_fractions
 from ._baseplot import MultiPanelFigure
 from ._helper import format_pval, get_palette
 
@@ -34,7 +33,7 @@ def get_percents(
     return_grouped_fractions: bool = False,
     return_melt: bool = False,
 ) -> pd.DataFrame:
-    df = get_fractions(
+    df = sample_fractions(
         adata,
         keys,
         groupby,
@@ -82,7 +81,9 @@ def _percentile_interval(data: Iterable[float], width: float) -> tuple[float, fl
     return tuple(np.nanpercentile(data, percentiles))
 
 
-def _bootstrap(data: Iterable[float], n_boot: int, seed: AnyRandom = 0, ci: float = 95):
+def _bootstrap(
+    data: Iterable[float], n_boot: int, seed: RandomState = 0, ci: float = 95
+):
     from seaborn.algorithms import bootstrap
 
     return _percentile_interval(
@@ -138,7 +139,7 @@ def comp_bar(
         mpfig.set_axis_lim(
             cur_ax,
             which="x",
-            axis_lim=(-0.5, len(get_categories(adata, groups[0])) - 0.5),
+            axis_lim=(-0.5, len(obs_categories(adata, groups[0])) - 0.5),
         )
         mpfig.redo_xy_lim(cur_ax)
         mpfig.redo_xy_ticks(cur_ax)
@@ -175,7 +176,7 @@ def div_comp_bar(
     gfeats = keys if isiterable(keys) else [keys]
     groups = groupby if isiterable(groupby) else [groupby]
     validate_groupby(adata, groups + gfeats)
-    g_cats = get_categories(adata, groups[0])
+    g_cats = obs_categories(adata, groups[0])
     assert len(g_cats) == 2, f"{groups[0]} does not exactly two categories."
 
     params = dict(kwargs)
@@ -184,11 +185,11 @@ def div_comp_bar(
     mpfig.create_fig(gfeats, [None], ax=ax, fig=fig)
 
     single_groupby = len(groups) == 1
-    g_cats = get_categories(adata, groups[0])
+    g_cats = obs_categories(adata, groups[0])
     g_pal = get_palette(adata, groups[0], palette=mpfig.palette)
     for i, gf in enumerate(gfeats):
         cur_ax = mpfig.get_ax(i, 0)
-        f_cats = get_categories(adata, gf)
+        f_cats = obs_categories(adata, gf)
         df = get_percents(
             adata, gf, groups, norm=norm, totals=totals, dropna=dropna, return_melt=True
         )
@@ -230,7 +231,7 @@ def div_comp_bar(
                 update_config(["edgecolor", "ec"], mpfig.edge_color, strip_args)
                 update_config(["alpha", "a"], 1 / 3, strip_args)
                 update_config(["linewidth", "lw"], mpfig.edge_linewidth, strip_args)
-                update_config("jitter", 1.0, strip_args)
+                update_config("jitter", True, strip_args)
                 sns.stripplot(data=g_df, palette=g_pal, zorder=1.1, **strip_args)
 
             if add_errbar:

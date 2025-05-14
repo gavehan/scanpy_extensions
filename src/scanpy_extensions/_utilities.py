@@ -4,22 +4,33 @@ from typing import Any, Mapping, Union
 
 import joblib
 import scanpy as sc
+from packaging.version import Version
 
 from ._validate import isiterable
+
+# handle random
+if Version(sc.__version__) >= Version("1.11.0"):
+    from scanpy._utils import SeedLike as RandomState
+else:
+    from scanpy._utils import AnyRandom as RandomState
 
 
 def session_info() -> None:
     import datetime
+    import sys
     from subprocess import check_output
 
     print("*" * 64)
-    print(datetime.datetime.now())
+    print(f"Execution date and time: {datetime.datetime.now()}")
     print("*" * 64)
+    print("CPU model: ", end="")
     print(
         check_output("lscpu | grep 'Model name'", shell=True, text=True)
         .split(":")[1]
         .strip()
     )
+    print("*" * 64)
+    print(f"Anaconda environment name: {sys.executable.split('/')[-3]}")
     print("*" * 64)
 
 
@@ -117,3 +128,14 @@ def create_scenic_adata(
     if format_regulon_names:
         rdata.var_names = rdata.var_names.map(lambda x: str(x)[8:-4])
     return rdata
+
+
+__all__ = [
+    "RandomState",
+    "session_info",
+    "set_env",
+    "update_config",
+    "tqdm_joblib",
+    "gene_liftover",
+    "create_scenic_adata",
+]

@@ -18,7 +18,7 @@ from .._validate import (
     validate_keys,
     validate_layer_and_raw,
 )
-from ..get import get_categories, get_obs_data
+from ..get import obs_categories, obs_data
 from ._baseplot import MultiPanelFigure
 from ._helper import get_palette, get_scatter_size
 
@@ -65,10 +65,10 @@ class FeatFigure(MultiPanelFigure):
         self.sub_group = self.groups[1] if self.two_groups else None
         self.null_sub_group = self.sub_group is None
         self.main_cats = (
-            [None] if self.null_main_group else get_categories(adata, self.main_group)
+            [None] if self.null_main_group else obs_categories(adata, self.main_group)
         )
         self.sub_cats = (
-            [None] if self.null_sub_group else get_categories(adata, self.sub_group)
+            [None] if self.null_sub_group else obs_categories(adata, self.sub_group)
         )
 
         self.layer, self.use_raw = validate_layer_and_raw(adata, layer, use_raw)
@@ -82,19 +82,19 @@ class FeatFigure(MultiPanelFigure):
         main_group_key: str,
         sub_group_key: str,
     ) -> tuple[pd.DataFrame, str, str]:
-        df = get_obs_data(
+        df = obs_data(
             adata, feats, layer=self.layer, use_raw=self.use_raw, as_series=False
         )
         df[main_group_key] = (
             ""
             if self.null_main_group
-            else get_obs_data(adata, self.main_group, as_series=True)
+            else obs_data(adata, self.main_group, as_series=True)
         )
         g1_name = "" if self.null_main_group else self.main_group
         df[sub_group_key] = (
             ""
             if self.null_sub_group
-            else get_obs_data(adata, self.sub_group, as_series=True)
+            else obs_data(adata, self.sub_group, as_series=True)
         )
         g2_name = "" if self.null_sub_group else self.sub_group
         return (df, g1_name, g2_name)
@@ -131,8 +131,10 @@ class FeatFigure(MultiPanelFigure):
 
     def cleanup_ax_legend(self, ax: mpl.axes.Axes, idx: int, title: str):
         if self.two_groups:
-            if ((idx % self._ncols) < (self._ncols - 1)) and (
-                idx != (self._npanels - 1)
+            if (
+                ((idx % self._ncols) < (self._ncols - 1))
+                and (idx != (self._npanels - 1))
+                and ax.get_legend() is not None
             ):
                 ax.get_legend().remove()
             else:
@@ -188,7 +190,7 @@ class DisFigure(FeatFigure):
         plot_params = dict(plot_kwargs)
 
         update_config(["linewidth", "lw"], self.edge_linewidth, plot_params)
-        update_config("dodge", True, plot_params)
+        update_config("dodge", self.two_groups, plot_params)
         if flavor == "bar":
             update_config(["edgecolor", "ec"], self.edge_color, plot_params)
             update_config(("errorbar" if self.sns_ver_13 else "ci"), None, plot_params)
@@ -208,10 +210,12 @@ class DisFigure(FeatFigure):
                 update_config("cut", 0.5, plot_params)
                 if n_color_cats == 2:
                     update_config("split", True, plot_params)
-                update_config("legend", False, plot_params)
+                if not self.two_groups:
+                    update_config("legend", False, plot_params)
             elif flavor == "box":
                 if self.sns_ver_13:
-                    update_config("legend", False, plot_params)
+                    if not self.two_groups:
+                        update_config("legend", False, plot_params)
                 else:
                     update_config(
                         "boxprops",
@@ -303,7 +307,7 @@ class RelFigure(FeatFigure):
             update_config("palette", self.palette, plot_params)
         else:
             update_config(
-                ["facecolors", "facecolor", "fc", "color", "c"], "black", scatter_params
+                ["facecolor", "facecolors", "fc", "color", "c"], "black", scatter_params
             )
             update_config("legend", False, plot_params)
             update_config("legend", False, scatter_params)
@@ -312,8 +316,10 @@ class RelFigure(FeatFigure):
         update_config(
             "size", get_scatter_size(cell_counts, self.figsize), scatter_params
         )
-        update_config(["linewidths", "lw"], self.edge_linewidth, scatter_params)
-        update_config(["edgecolors", "edgecolor", "ec"], "gray", scatter_params)
+        update_config(
+            ["linewidth", "linewidths", "lw"], self.edge_linewidth, scatter_params
+        )
+        update_config(["edgecolor", "edgecolors", "ec"], "gray", scatter_params)
 
         # hist or kde plots
         if flavor in ["hist", "kde"]:
@@ -389,8 +395,14 @@ def dis(
             y="a_group" if swap_axis else f,
             orient="h" if swap_axis else "v",
             order=None if disfig.null_main_group else disfig.main_cats,
-            hue="c_group" if disfig.two_groups else None,
-            hue_order=disfig.sub_cats if disfig.two_groups else None,
+            hue="c_group" if disfig.two_groups else "a_group",
+            hue_order=(
+                disfig.sub_cats
+                if disfig.two_groups
+                else None
+                if disfig.null_main_group
+                else disfig.main_cats
+            ),
             palette=pal,
             ax=cur_ax,
         )

@@ -111,7 +111,7 @@ def volcano(
         data=df.sort_values(cls_key),
         x=lfc_key,
         y=neg_log_pval_key,
-        linewidths=0.0,
+        linewidth=0.0,
         edgecolor="none",
         s=get_scatter_size(df.shape[0], mpfig.figsize, 0.5),
         hue=cls_key,

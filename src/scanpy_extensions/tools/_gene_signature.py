@@ -5,9 +5,8 @@ import numpy as np
 import scanpy as sc
 from numba import jit
 from scanpy import logging as logg
-from scanpy._utils import AnyRandom
 
-from .._utilities import update_config
+from .._utilities import RandomState, update_config
 from .._validate import validate_keys, validate_layer_and_raw
 
 
@@ -68,7 +67,7 @@ def gene_signature(
     weights: Optional[Iterable[float]] = None,
     flavor: Literal["vision", "aucell"] = "aucell",
     score_name: str = "score",
-    random_state: AnyRandom = 0,
+    random_state: RandomState = 0,
     copy: bool = False,
     layer: Optional[str] = None,
     use_raw: Optional[bool] = None,

@@ -4,9 +4,8 @@ from typing import Any, Dict, Iterable, Literal, Optional, Tuple, Union
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
-from scanpy._utils import AnyRandom
 
-from .._utilities import update_config
+from .._utilities import RandomState, update_config
 
 # Text rotation parameters for different axis positions
 TEXT_LOC_PARAMS = {
@@ -100,7 +99,7 @@ class BaseFigure:
     legend_params: Dict[str, Any] = field(
         default_factory=lambda: dict(
             loc="upper left",
-            bbox_to_anchor=(1.02, 0.99),
+            bbox_to_anchor=(1.02, 1.0),
             frameon=False,
             fontsize=plt.rcParams["legend.fontsize"],
             markerscale=plt.rcParams["legend.markerscale"],
@@ -118,7 +117,7 @@ class BaseFigure:
     fixed_figsize: Optional[Tuple[float, float]] = None
 
     # Random settings
-    random_state: AnyRandom = 0
+    random_state: RandomState = 0
 
     def __init__(self, **kwargs):
         params = dict(kwargs)
@@ -571,7 +570,7 @@ class MultiPanelFigure(BaseFigure):
 
     # Matplotlib objects
     fig: Optional[mpl.figure.Figure] = None
-    axs: Optional[np.typing.NDArray[mpl.axes.Axes]] = None
+    axs: Optional[np.ndarray] = None
 
     # Multi-panel layout
     ncols: Optional[int] = None

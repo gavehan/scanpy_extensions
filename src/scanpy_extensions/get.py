@@ -8,7 +8,7 @@ from scanpy import logging as logg
 from ._validate import isiterable, ismapping, validate_layer_and_raw
 
 
-def get_categories(
+def obs_categories(
     adata: sc.AnnData,
     key: str,
 ) -> Iterable[str]:
@@ -21,7 +21,7 @@ def get_categories(
     )
 
 
-def get_obs_data(
+def obs_data(
     adata: sc.AnnData,
     keys: Union[str, Iterable[str]],
     layer: Optional[str] = None,
@@ -44,7 +44,7 @@ def get_obs_data(
     return ret.to_frame() if isinstance(ret, pd.Series) else ret
 
 
-def get_fractions(
+def sample_fractions(
     adata: sc.AnnData,
     keys: str,
     groupby: Union[str, tuple[str, str]],
@@ -56,8 +56,8 @@ def get_fractions(
     groups = groupby if isiterable(groupby) else [groupby]
     single_groupby = len(groups) == 1
     main_g = groups[0] if single_groupby else groups[1]
-    g_cats = get_categories(adata, main_g)
-    f_cats = get_categories(adata, keys)
+    g_cats = obs_categories(adata, main_g)
+    f_cats = obs_categories(adata, keys)
     assert totals is None or len(g_cats) == len(totals), (
         f"Length of provided totals ({len(totals)}) does not match length of categories ({len(g_cats)})."
     )
@@ -87,7 +87,7 @@ def get_fractions(
             columns=keys,
         )
         df.columns = [x[1] for x in df.columns]
-        df = df.loc[get_categories(adata, groups[0]), f_cats]
+        df = df.loc[obs_categories(adata, groups[0]), f_cats]
     df.index.name = groups[0]
     df.columns.name = keys
     return df

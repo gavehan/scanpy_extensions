@@ -5,7 +5,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import scanpy as sc
 
-from ..get import get_categories, isiterable
+from ..get import isiterable, obs_categories
 
 PVAL_THRESHOLDS = [1e-3, 1e-2, 5e-2]
 
@@ -40,7 +40,7 @@ def get_palette(
         if palette is not None
         else plt.rcParams["axes.prop_cycle"].by_key()["color"]
     )
-    cats = [None] if key is None else get_categories(adata, key)
+    cats = [None] if key is None else obs_categories(adata, key)
     colors = None
     if f"{key}_colors" in adata.uns.keys() and (not force or palette is None):
         colors = adata.uns[f"{key}_colors"]

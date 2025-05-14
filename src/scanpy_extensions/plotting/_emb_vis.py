@@ -16,7 +16,7 @@ from .._validate import (
     validate_keys,
     validate_layer_and_raw,
 )
-from ..get import get_categories, get_obs_data
+from ..get import obs_categories, obs_data
 from ._baseplot import MultiPanelFigure
 from ._helper import get_palette, get_scatter_size
 
@@ -79,7 +79,7 @@ class EmbFigure(MultiPanelFigure):
         if groupby is not None:
             self.groupby = groupby
             validate_groupby(adata, [self.groupby])
-            self.gb_cats = get_categories(adata, self.groupby)
+            self.gb_cats = obs_categories(adata, self.groupby)
         else:
             self.gb_cats = [None]
         self.basis = EmbFigure._process_basis(adata, basis)
@@ -92,7 +92,7 @@ class EmbFigure(MultiPanelFigure):
         if smooth and (_obsp_key not in adata.obsp.keys()):
             from scanpy import logging as logg
 
-            from ..tools._neighbors import sklearn_neighbors
+            from ..preprocessing._neighbors import sklearn_neighbors
 
             _nn = max(10, int(np.round(np.log10(adata.shape[0]))))
             logg.warning(
@@ -111,19 +111,17 @@ class EmbFigure(MultiPanelFigure):
     def prepare_emb_data(self, adata: sc.AnnData) -> sc.AnnData:
         from scipy.sparse import csr_matrix
 
-        _adata = sc.AnnData(
-            csr_matrix((adata.shape[0], 1), dtype=np.int8), dtype=np.int8
-        )
+        _adata = sc.AnnData(csr_matrix((adata.shape[0], 1), dtype=np.int8))
         _adata.obs_names = adata.obs_names.copy()
         _adata.obsm[self.basis] = adata.obsm[self.basis].copy()
         for k in self.feats:
             if k is None:
                 continue
-            _adata.obs[k] = get_obs_data(
+            _adata.obs[k] = obs_data(
                 adata, k, layer=self.layer, use_raw=self.use_raw, as_series=True
             )
         if self.groupby is not None:
-            _adata.obs[self.groupby] = get_obs_data(adata, self.groupby, as_series=True)
+            _adata.obs[self.groupby] = obs_data(adata, self.groupby, as_series=True)
         saved_colors = [x for x in adata.uns.keys() if "colors" in x]
         for x in saved_colors:
             _adata.uns[x] = list(adata.uns[x])
@@ -202,16 +200,18 @@ class EmbFigure(MultiPanelFigure):
                 [""] * plot_adata.shape[0], index=plot_adata.obs_names
             )
         else:
-            _plot_data = get_obs_data(
+            _plot_data = obs_data(
                 plot_adata,
                 keys=key,
                 layer=self.layer,
                 use_raw=self.use_raw,
                 as_series=True,
             )
-            self.feat_is_num = validate_keys(plot_adata, keys=key, check_numeric=False)[
-                0
-            ]
+            self.feat_is_num = validate_keys(
+                plot_adata,
+                keys=key,
+                check_numeric=False,
+            )[0]
             self.smooth_undo_log = (
                 (key not in og_adata.obs.columns) if undo_log is None else undo_log
             )
@@ -381,7 +381,7 @@ def emb(
             else:
                 _subset_idx = _adata.obs[groupby] == c
                 _adata.obs[_fkey] = pd.Series(
-                    [np.nan] * _adata.shape[0],
+                    [np.nan if efig.feat_is_num else pd.NA] * _adata.shape[0],
                     index=_adata.obs_names,
                 )
                 _val = _adata.obs.loc[_subset_idx, fkey].copy()
@@ -429,6 +429,7 @@ def annot_emb(
     groupby: Optional[str] = None,
     basis: Optional[str] = None,
     title: Optional[Union[bool, str, Iterable[str]]] = True,
+    do_textloc: bool = True,
     label_kwargs: Mapping[str, Any] = MappingProxyType({}),
     textloc_kwargs: Mapping[str, Any] = MappingProxyType({}),
     ax: Optional[mpl.axes.Axes] = None,
@@ -479,7 +480,7 @@ def annot_emb(
     cur_ax = efig.get_ax(0, 0)
     plot_params = dict(
         size=efig.size,
-        legend_loc="None",
+        legend_loc="none",
     )
     plot_params.update(dict(plot_kwargs))
     plot_title = efig.create_emb_title(_adata, title=title)
@@ -498,20 +499,22 @@ def annot_emb(
     texts = []
     for t, row in all_pos.iterrows():
         texts.append(cur_ax.text(row["x"], row["y"], t, **_label_args))
-    if adata.shape[0] > 1e3:
-        from geosketch import gs
 
-        _idx = gs(
-            adata.obsm[efig.basis], int(1e3), replace=False, seed=efig.random_state
+    if do_textloc:
+        if adata.shape[0] > 1e3:
+            from geosketch import gs
+
+            _idx = gs(
+                adata.obsm[efig.basis], int(1e3), replace=False, seed=efig.random_state
+            )
+        else:
+            _idx = np.arange(adata.shape[0])
+        adjust_text(
+            texts,
+            x=x_pos[_idx],
+            y=y_pos[_idx],
+            ax=cur_ax,
+            **_textloc_args,
         )
-    else:
-        _idx = np.arange(adata.shape[0])
-    adjust_text(
-        texts,
-        x=x_pos[_idx],
-        y=y_pos[_idx],
-        ax=cur_ax,
-        **_textloc_args,
-    )
 
     return efig.save_or_show(f"annot_{efig.basis}")

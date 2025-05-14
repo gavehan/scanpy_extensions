@@ -16,7 +16,7 @@ from .._validate import (
     validate_keys,
     validate_layer_and_raw,
 )
-from ..get import get_categories, get_obs_data
+from ..get import obs_categories, obs_data
 from ._baseplot import TEXT_SEP, MultiPanelFigure
 
 
@@ -158,7 +158,7 @@ class AggrFigure(MultiPanelFigure):
     ) -> pd.DataFrame:
         from collections import Counter
 
-        df = get_obs_data(
+        df = obs_data(
             adata,
             self.feats + self.groups,
             layer=layer,
@@ -238,9 +238,9 @@ class AggrFigure(MultiPanelFigure):
     ) -> None:
         """Prepare plot dimensions and figure."""
         # Set categories for groups
-        self.main_cats = list(get_categories(adata, self.groups[0]))
+        self.main_cats = list(obs_categories(adata, self.groups[0]))
         self.conj_cats = (
-            list(get_categories(adata, self.groups[1])) if self.gk_is_conj else None
+            list(obs_categories(adata, self.groups[1])) if self.gk_is_conj else None
         )
         x_n = len(self.feats)
         y_n = len(self.main_cats)
@@ -413,8 +413,8 @@ class AggrFigure(MultiPanelFigure):
                 _s_ticks,
                 s=sizes,
                 c="lightgray",
-                edgecolors=self.edge_color,
-                linewidths=self.edge_linewidth,
+                edgecolor=self.edge_color,
+                linewidth=self.edge_linewidth,
                 clip_on=False,
             )
 
@@ -458,7 +458,7 @@ class AggrFigure(MultiPanelFigure):
         # Common plot settings
         plot_kwargs = {
             "cmap": self.color_map,
-            "linewidths": self.edge_linewidth,
+            "linewidth": self.edge_linewidth,
             "norm": self.cnorm,
         }
 
@@ -478,7 +478,7 @@ class AggrFigure(MultiPanelFigure):
                 y=y_col,
                 c="scaled_avg",
                 s="pct_dot",
-                edgecolors=self.edge_color,
+                edgecolor=self.edge_color,
                 **plot_kwargs,
             )
         elif self.flavor == "matrix":

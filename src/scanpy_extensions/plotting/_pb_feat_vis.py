@@ -15,7 +15,7 @@ from .._validate import (
     validate_groupby,
     validate_keys,
 )
-from ..get import get_categories, get_obs_data
+from ..get import obs_categories, obs_data
 from ._feat_vis import DisFigure, FeatFigure, RelFigure
 from ._helper import get_palette
 
@@ -35,7 +35,7 @@ class PBFeatFigure(FeatFigure):
     ) -> None:
         self.pb_group = pb_group
         validate_groupby(adata, self.pb_group)
-        self.pb_cats = get_categories(adata, self.pb_group)
+        self.pb_cats = obs_categories(adata, self.pb_group)
 
         self._process_feat_inputs(
             adata=adata, groupby=groupby, layer=layer, use_raw=use_raw
@@ -54,7 +54,7 @@ class PBFeatFigure(FeatFigure):
             if undo_log is None
             else undo_log
         )
-        df = get_obs_data(
+        df = obs_data(
             adata,
             feats + [self.pb_group],
             layer=self.layer,

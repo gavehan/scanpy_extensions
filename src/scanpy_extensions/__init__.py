@@ -2,6 +2,7 @@ import sys
 
 from . import get
 from . import plotting as pl
+from . import preprocessing as pp
 from . import tools as tl
 from ._utilities import (
     create_scenic_adata,
