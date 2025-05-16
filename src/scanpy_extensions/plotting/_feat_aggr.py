@@ -9,7 +9,6 @@ import pandas as pd
 import scanpy as sc
 import seaborn as sns
 
-from .._utilities import update_config
 from .._validate import (
     isiterable,
     validate_groupby,
@@ -262,9 +261,14 @@ class AggrFigure(MultiPanelFigure):
                 keys if self.keys_is_map else self.feats
             )
             _z_len = max(
-                2.5e-2, ((np.sqrt(z_lab_len) / 20) / (2 if self.swap_axis else 0.8))
+                (1e-2 if self.swap_axis else 2.5e-2),
+                (np.sqrt(z_lab_len) / (30 if self.swap_axis else 15)),
             )
-            _z_len = min(0.1, _z_len) if self.z_length is None else self.z_length
+            _z_len = (
+                min((0.1 if self.swap_axis else 0.2), _z_len)
+                if self.z_length is None
+                else self.z_length
+            )
             x_annot = _z_len * y_n
 
         # Swap dimensions if needed
@@ -378,7 +382,7 @@ class AggrFigure(MultiPanelFigure):
         self.set_axis_limits(
             cur_ax, which="y", axis_lim=(_min, _max), clip_zero=False, force=True
         )
-        self.set_axis_tickloc(cur_ax, which="y", max_n_ticks=4)
+        self.set_axis_tickloc(cur_ax, which="y")
         self.update_axis_ticks(cur_ax, **ytick_params)
 
         # Add size legend for dot plots
@@ -386,9 +390,9 @@ class AggrFigure(MultiPanelFigure):
         if self.flavor == "dot":
             _min, _max = data["pct"].min(), data["pct"].max()
             # Calculate tick values for size legend
-            s_ticks = AggrFigure.create_axis_tickloc(
-                n_ticks=self.n_ticks, max_n_ticks=5
-            ).tick_values(_min, _max)
+            s_ticks = self.get_axis_tickloc(ax=cur_ax, which="y").tick_values(
+                _min, _max
+            )
             s_ticks = [t for t in s_ticks if (t <= _max)]
 
             # Remove zero if configured
@@ -629,7 +633,6 @@ def aggr(
     **kwargs,
 ) -> Optional[Union[mpl.axes.Axes, Iterable[mpl.axes.Axes]]]:
     params = dict(kwargs)
-    update_config("n_ticks", 2, params)
     afig = AggrFigure(**params)
     afig.process_aggr_inputs(
         adata,

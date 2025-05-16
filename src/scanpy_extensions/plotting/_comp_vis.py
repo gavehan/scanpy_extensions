@@ -229,7 +229,7 @@ def div_comp_bar(
                 strip_args = args.copy()
                 strip_args.update(dict(strip_kwargs))
                 update_config(MPL_PARAMETER_NAMES["ec"], mpfig.edge_color, strip_args)
-                update_config(MPL_PARAMETER_NAMES["a"], 1 / 3, strip_args)
+                update_config(MPL_PARAMETER_NAMES["a"], (1 / 3), strip_args)
                 update_config(
                     MPL_PARAMETER_NAMES["lw"], mpfig.edge_linewidth, strip_args
                 )
@@ -238,7 +238,7 @@ def div_comp_bar(
                     get_marker_size(
                         (g_df.shape[0] * g_df.shape[1]),
                         figsize=mpfig.figsize,
-                        scale=0.1,
+                        scale=(1 / 3),
                     ),
                     strip_args,
                 )

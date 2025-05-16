@@ -57,7 +57,6 @@ def get_default_legend_markerscale():
 
 
 # Default constants
-DEFAULT_N_TICKS: int = 3
 DEFAULT_AXIS_PAD: float = 2.5e-2
 DEFAULT_TEXT_WRAP_LENGTH: int = 30
 DEFAULT_LINESPACING: float = 0.9
@@ -136,7 +135,7 @@ class BaseFigure:
     """
 
     # Axis and coordinate settings
-    n_ticks: int = DEFAULT_N_TICKS
+    n_ticks: Optional[int] = None
     x_rotation: float = DEFAULT_X_ROTATION
     y_rotation: float = DEFAULT_Y_ROTATION
     x_lim: Optional[Tuple[float, float]] = None
@@ -334,32 +333,49 @@ class BaseFigure:
     @staticmethod
     def create_axis_tickloc(
         n_ticks: int,
-        max_n_ticks: Optional[int] = None,
         simple_steps: bool = False,
     ) -> mpl.ticker.MaxNLocator:
         """Create a tick locator for automatic tick placement."""
         _steps = [1, 2, 2.5, 5, 10] if simple_steps else [1, 2, 2.5, 3, 4, 5, 10]
         return mpl.ticker.MaxNLocator(
-            nbins="auto" if max_n_ticks is None else max_n_ticks,
+            nbins=(max(2, n_ticks) + 1),
             steps=_steps,
-            min_n_ticks=n_ticks,
         )
+
+    def get_axis_tickloc(
+        self,
+        ax: mpl.axes.Axes,
+        which: Literal["x", "y"] = "x",
+        n_ticks: Optional[int] = None,
+        simple_steps: bool = False,
+    ):
+        ax_size = ax.get_window_extent().transformed(
+            ax.get_figure().dpi_scale_trans.inverted()
+        )
+        axis_size = ax_size.width if which == "x" else ax_size.height
+        _n_ticks = int(np.round((np.sqrt(axis_size) / plt.rcParams["font.size"] * 22)))
+        _n_ticks = (
+            self.n_ticks
+            if self.n_ticks is not None
+            else n_ticks
+            if n_ticks is not None
+            else _n_ticks
+        )
+        return BaseFigure.create_axis_tickloc(_n_ticks, simple_steps=simple_steps)
 
     def set_axis_tickloc(
         self,
         ax: mpl.axes.Axes,
         which: Literal["x", "y"] = "x",
         n_ticks: Optional[int] = None,
-        max_n_ticks: Optional[int] = None,
         simple_steps: bool = False,
         update_axis_lim: bool = True,
     ) -> None:
         """Set automatic tick locations for an axis."""
         _axis = ax.xaxis if which == "x" else ax.yaxis
-        _n_ticks = self.n_ticks if n_ticks is None else n_ticks
         _axis.set_major_locator(
-            BaseFigure.create_axis_tickloc(
-                n_ticks=_n_ticks, max_n_ticks=max_n_ticks, simple_steps=simple_steps
+            self.get_axis_tickloc(
+                ax=ax, which=which, n_ticks=n_ticks, simple_steps=simple_steps
             )
         )
         _axis.reset_ticks()
@@ -371,7 +387,6 @@ class BaseFigure:
         self,
         ax: mpl.axes.Axes,
         n_ticks: Optional[int] = None,
-        max_n_ticks: Optional[int] = None,
         simple_steps: bool = False,
         update_axis_lim: bool = True,
     ) -> None:
@@ -380,7 +395,6 @@ class BaseFigure:
             ax=ax,
             which="x",
             n_ticks=n_ticks,
-            max_n_ticks=max_n_ticks,
             simple_steps=simple_steps,
             update_axis_lim=update_axis_lim,
         )
@@ -388,7 +402,6 @@ class BaseFigure:
             ax=ax,
             which="y",
             n_ticks=n_ticks,
-            max_n_ticks=max_n_ticks,
             simple_steps=simple_steps,
             update_axis_lim=update_axis_lim,
         )
