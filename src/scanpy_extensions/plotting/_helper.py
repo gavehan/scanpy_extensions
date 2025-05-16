@@ -120,7 +120,8 @@ def _extract_colors_from_colormap(
 
 
 def _create_color_palette(
-    palette: Union[str, Iterable[str], mpl.colors.Colormap, None], n_colors: int
+    palette: Union[str, Iterable[str], mpl.colors.Colormap, None],
+    n_colors: int,
 ) -> list[str]:
     """Create a color palette from various input types.
 

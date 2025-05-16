@@ -210,11 +210,11 @@ def pb_dis(
             undo_log=None if undo_log is None else undo_log[i],
         )
         pal = (
-            get_palette(adata, cg_name, palette=disfig.palette, return_dict=False)
+            get_palette(adata, cg_name, palette=disfig.palette, as_dict=False)
             if disfig.two_groups
             else None
             if disfig.null_main_group
-            else get_palette(adata, ag_name, palette=disfig.palette, return_dict=False)
+            else get_palette(adata, ag_name, palette=disfig.palette, as_dict=False)
         )
         cur_ax = disfig.get_ax(i, 0, return_idx=False)
         _plot_func(
