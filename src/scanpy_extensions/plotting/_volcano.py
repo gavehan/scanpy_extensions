@@ -67,7 +67,7 @@ def volcano(
     update_config("avoid_label_lines_overlap", True, textloc_params)
     update_config("min_distance", 5e-3, textloc_params)
     update_config("max_distance", 0.5, textloc_params)
-    update_config("seed", mpfig.random_state, textloc_params)
+    # update_config("seed", mpfig.random_state, textloc_params)
     update_config("nbr_candidates", int(5e3), textloc_params)
     update_config(
         "path_effects",
