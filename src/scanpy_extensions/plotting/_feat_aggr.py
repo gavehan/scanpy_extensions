@@ -382,7 +382,8 @@ class AggrFigure(MultiPanelFigure):
         self.set_axis_limits(
             cur_ax, which="y", axis_lim=(_min, _max), clip_zero=False, force=True
         )
-        self.set_axis_tickloc(cur_ax, which="y")
+        n_ticks = max(self.get_n_ticks_for_ax(ax=cur_ax, which="y"), 2)
+        self.set_axis_tickloc(cur_ax, which="y", n_ticks=n_ticks)
         self.update_axis_ticks(cur_ax, **ytick_params)
 
         # Add size legend for dot plots
@@ -390,17 +391,22 @@ class AggrFigure(MultiPanelFigure):
         if self.flavor == "dot":
             _min, _max = data["pct"].min(), data["pct"].max()
             # Calculate tick values for size legend
-            s_ticks = self.get_axis_tickloc(ax=cur_ax, which="y").tick_values(
-                _min, _max
+            n_ticks = max(
+                self.get_n_ticks_for_ax(ax=cur_ax, which="y"),
+                3 if self.legend_size_include_zero else 4,
             )
-            s_ticks = [t for t in s_ticks if (t <= _max)]
+            s_ticks = self.get_axis_tickloc(
+                ax=cur_ax, which="y", n_ticks=n_ticks
+            ).tick_values(_min, _max)
+            # s_ticks = [t for t in s_ticks if (t <= (_max + 1e-6))]
 
             # Remove zero if configured
             if not self.legend_size_include_zero and s_ticks[0] < 1e-6:
                 s_ticks = s_ticks[1:].copy()
 
             # Calculate number of decimal places needed
-            decimals = min(sorted([len(str(t).split(".")[-1]) for t in s_ticks])[-2], 3)
+            decimals = sorted([len(str(t).split(".")[-1]) for t in s_ticks])
+            decimals = min((decimals[-1] if len(decimals) > 0 else 0), 3)
             _s_ticks = np.round(s_ticks, decimals)
 
             # Calculate size values proportionally

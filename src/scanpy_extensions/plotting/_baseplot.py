@@ -333,27 +333,34 @@ class BaseFigure:
     @staticmethod
     def create_axis_tickloc(
         n_ticks: int,
-        simple_steps: bool = False,
+        simple_steps: bool = True,
     ) -> mpl.ticker.MaxNLocator:
         """Create a tick locator for automatic tick placement."""
         _steps = [1, 2, 2.5, 5, 10] if simple_steps else [1, 2, 2.5, 3, 4, 5, 10]
         return mpl.ticker.MaxNLocator(
-            nbins=(max(2, n_ticks) + 1),
+            nbins=n_ticks,
             steps=_steps,
         )
+
+    def get_n_ticks_for_ax(
+        self,
+        ax: mpl.axes.Axes,
+        which: Literal["x", "y"] = "x",
+    ):
+        ax_size = ax.get_window_extent().transformed(
+            ax.get_figure().dpi_scale_trans.inverted()
+        )
+        axis_size = ax_size.width if which == "x" else ax_size.height
+        return int(np.round((np.sqrt(axis_size) / plt.rcParams["font.size"] * 22)))
 
     def get_axis_tickloc(
         self,
         ax: mpl.axes.Axes,
         which: Literal["x", "y"] = "x",
         n_ticks: Optional[int] = None,
-        simple_steps: bool = False,
+        simple_steps: bool = True,
     ):
-        ax_size = ax.get_window_extent().transformed(
-            ax.get_figure().dpi_scale_trans.inverted()
-        )
-        axis_size = ax_size.width if which == "x" else ax_size.height
-        _n_ticks = int(np.round((np.sqrt(axis_size) / plt.rcParams["font.size"] * 22)))
+        _n_ticks = self.get_n_ticks_for_ax(ax=ax, which=which)
         _n_ticks = (
             self.n_ticks
             if self.n_ticks is not None
@@ -368,7 +375,7 @@ class BaseFigure:
         ax: mpl.axes.Axes,
         which: Literal["x", "y"] = "x",
         n_ticks: Optional[int] = None,
-        simple_steps: bool = False,
+        simple_steps: bool = True,
         update_axis_lim: bool = True,
     ) -> None:
         """Set automatic tick locations for an axis."""
@@ -387,7 +394,7 @@ class BaseFigure:
         self,
         ax: mpl.axes.Axes,
         n_ticks: Optional[int] = None,
-        simple_steps: bool = False,
+        simple_steps: bool = True,
         update_axis_lim: bool = True,
     ) -> None:
         """Set automatic tick locations for both axes."""

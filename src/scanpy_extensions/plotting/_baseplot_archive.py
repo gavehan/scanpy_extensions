@@ -261,7 +261,7 @@ class BaseFigure:
     def create_axis_tickloc(
         n_ticks: int,
         max_n_ticks: Optional[int] = None,
-        simple_steps: bool = False,
+        simple_steps: bool = True,
     ) -> mpl.ticker.MaxNLocator:
         _steps = [1, 2, 2.5, 5, 10] if simple_steps else [1, 2, 2.5, 3, 4, 5, 10]
         return mpl.ticker.MaxNLocator(
@@ -276,7 +276,7 @@ class BaseFigure:
         which: Literal["x", "y"] = "x",
         n_ticks: Optional[int] = None,
         max_n_ticks: Optional[int] = None,
-        simple_steps: bool = False,
+        simple_steps: bool = True,
         redo_axis_lim: bool = True,
     ) -> None:
         _axis = ax.xaxis if which == "x" else ax.yaxis
@@ -297,7 +297,7 @@ class BaseFigure:
         ax: mpl.axes.Axes,
         n_ticks: Optional[int] = None,
         max_n_ticks: Optional[int] = None,
-        simple_steps: bool = False,
+        simple_steps: bool = True,
         redo_axis_lim: bool = True,
     ) -> None:
         self.set_axis_tickloc(
