@@ -137,8 +137,8 @@ class BaseFigure:
 
     # Axis and coordinate settings
     n_ticks: int = DEFAULT_N_TICKS
-    xticklabels_rotation: float = DEFAULT_X_ROTATION
-    yticklabels_rotation: float = DEFAULT_Y_ROTATION
+    x_rotation: float = DEFAULT_X_ROTATION
+    y_rotation: float = DEFAULT_Y_ROTATION
     x_lim: Optional[Tuple[float, float]] = None
     y_lim: Optional[Tuple[float, float]] = None
     x_ticks: Optional[Tuple[Iterable[float], Iterable[str]]] = None
@@ -163,7 +163,7 @@ class BaseFigure:
     legend_params: Dict[str, Any] = field(
         default_factory=lambda: dict(
             loc="upper left",
-            bbox_to_anchor=(1.02, 1.0),
+            bbox_to_anchor=(1.02, 1.01),
             frameon=False,
             fontsize=get_default_legend_fontsize(),
             markerscale=get_default_legend_markerscale(),
@@ -517,7 +517,7 @@ class BaseFigure:
         """Set tick labels and positions for an axis."""
         _text_loc = ("x_b" if which == "x" else "y_l") if text_loc is None else text_loc
         _text_rot = (
-            (self.xticklabels_rotation if which == "x" else self.yticklabels_rotation)
+            (self.x_rotation if which == "x" else self.y_rotation)
             if text_rotation is None
             else text_rotation
         )
@@ -586,7 +586,7 @@ class BaseFigure:
         """Update tick labels using stored values."""
         _text_loc = ("x_b" if which == "x" else "y_l") if text_loc is None else text_loc
         _text_rot = (
-            (self.xticklabels_rotation if which == "x" else self.yticklabels_rotation)
+            (self.x_rotation if which == "x" else self.y_rotation)
             if text_rotation is None
             else text_rotation
         )
