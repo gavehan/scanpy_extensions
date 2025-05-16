@@ -122,7 +122,7 @@ def volcano(
     )
     cur_ax.set_xlabel(r"$Log_2$" + " FC")
     cur_ax.set_ylabel("-" + r"$Log_{10}$" + " Adj. P-value")
-    mpfig.set_xy_lim(cur_ax, clip_zero=False)
+    mpfig.set_xy_limits(cur_ax, clip_zero=False)
     mpfig.set_xy_tickloc(cur_ax)
     mpfig.set_xy_ticks(cur_ax)
 

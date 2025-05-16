@@ -237,10 +237,10 @@ def pb_dis(
         _set_func(ag_name)
         plot_title = disfig.titles[i] if disfig.titles is not None else ""
         cur_ax.set_title(plot_title)
-        disfig.set_axis_lim(
+        disfig.set_axis_limits(
             cur_ax,
             which=_which,
-            axis_lim=disfig.get_hard_zero_axis_lim(
+            axis_lim=disfig.get_hard_zero_axis_limits(
                 df[f], ax=cur_ax, which=_which, clip_zero=True
             ),
             force=True,
@@ -355,13 +355,13 @@ def pb_rel(
             if j > 0:
                 relfig.redo_xy_lim(cur_ax, clip_zero=False)
             else:
-                x_lim = relfig.get_hard_zero_axis_lim(
+                x_lim = relfig.get_hard_zero_axis_limits(
                     df[fp[0]], ax=cur_ax, which="x", clip_zero=False
                 )
-                y_lim = relfig.get_hard_zero_axis_lim(
+                y_lim = relfig.get_hard_zero_axis_limits(
                     df[fp[1]], ax=cur_ax, which="y", clip_zero=False
                 )
-                relfig.set_xy_lim(
+                relfig.set_xy_limits(
                     cur_ax,
                     xaxis_lim=x_lim,
                     yaxis_lim=y_lim,

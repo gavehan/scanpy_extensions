@@ -133,10 +133,10 @@ def comp_bar(
             **plot_params,
         )
         if mpfig.sharey and mpfig.y_lim is None:
-            mpfig.set_axis_lim(cur_ax, which="y", clip_zero=True)
+            mpfig.set_axis_limits(cur_ax, which="y", clip_zero=True)
             mpfig.set_axis_tickloc(cur_ax, which="y")
             mpfig.set_axis_ticks(cur_ax, which="y")
-        mpfig.set_axis_lim(
+        mpfig.set_axis_limits(
             cur_ax,
             which="x",
             axis_lim=(-0.5, len(obs_categories(adata, groups[0])) - 0.5),

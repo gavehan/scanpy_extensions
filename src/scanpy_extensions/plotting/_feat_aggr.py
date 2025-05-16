@@ -261,11 +261,10 @@ class AggrFigure(MultiPanelFigure):
             z_lab_len = AggrFigure._get_max_label_length(
                 keys if self.keys_is_map else self.feats
             )
-            _z_len = (
-                (max(0.1, (np.sqrt(z_lab_len) / 20)) / (2 if self.swap_axis else 0.8))
-                if self.z_length is None
-                else self.z_length
+            _z_len = max(
+                2.5e-2, ((np.sqrt(z_lab_len) / 20) / (2 if self.swap_axis else 0.8))
             )
+            _z_len = min(0.1, _z_len) if self.z_length is None else self.z_length
             x_annot = _z_len * y_n
 
         # Swap dimensions if needed
@@ -376,11 +375,11 @@ class AggrFigure(MultiPanelFigure):
 
         # Set colorbar label and ticks
         cur_ax.set_xlabel(self.legend_color_title, **label_params)
-        self.set_axis_lim(
+        self.set_axis_limits(
             cur_ax, which="y", axis_lim=(_min, _max), clip_zero=False, force=True
         )
         self.set_axis_tickloc(cur_ax, which="y", max_n_ticks=4)
-        self.redo_axis_ticks(cur_ax, **ytick_params)
+        self.update_xy_ticks(cur_ax, **ytick_params)
 
         # Add size legend for dot plots
         cur_ax = self.legend_axd["S"]
@@ -422,7 +421,7 @@ class AggrFigure(MultiPanelFigure):
             cur_ax.set_xlabel(self.legend_size_title, **label_params)
             cur_ax.set(ylabel=None)
             cur_ax.set_xlim(auto=True)
-            self.set_axis_lim(cur_ax, which="y", clip_zero=True, force=True)
+            self.set_axis_limits(cur_ax, which="y", clip_zero=True, force=True)
             cur_ax.set_xticks([])
             self.set_axis_ticks(
                 cur_ax, ticks=(_s_ticks, [str(t) for t in _s_ticks]), **ytick_params
@@ -436,14 +435,14 @@ class AggrFigure(MultiPanelFigure):
         for a in self.legend_axd.keys():
             AggrFigure._cleanup_ax(self.legend_axd[a])
 
-    def _get_aggr_axis_lim(
+    def _get_aggr_axis_limits(
         self, ax: mpl.axes.Axes, which: Literal["x", "y"] = "x"
     ) -> Tuple[float, float]:
-        axis_lim = AggrFigure._get_data_lim(ax=ax, which=which)
+        axis_lim = AggrFigure._get_data_limits(ax=ax, which=which)
         # axis_lim = ax.get_xlim() if which == "x" else ax.get_ylim()
         if self.flavor == "dot":
             axis_lim = (axis_lim[0] - 0.5, axis_lim[1] + 0.5)
-        _axis_lim = AggrFigure._calc_axis_lim(
+        _axis_lim = AggrFigure._calculate_axis_limits(
             axis_lim=axis_lim, axis_pad=self.axis_pad, clip_zero=False
         )
         return _axis_lim
@@ -513,10 +512,10 @@ class AggrFigure(MultiPanelFigure):
 
         # Calculate tick positions
         cur_ax.set(xlabel=None, ylabel=None)
-        self.set_xy_lim(
+        self.set_xy_limits(
             cur_ax,
-            xaxis_lim=self._get_aggr_axis_lim(cur_ax, which="x"),
-            yaxis_lim=self._get_aggr_axis_lim(cur_ax, which="y"),
+            xaxis_lim=self._get_aggr_axis_limits(cur_ax, which="x"),
+            yaxis_lim=self._get_aggr_axis_limits(cur_ax, which="y"),
             clip_zero=False,
             force=True,
         )

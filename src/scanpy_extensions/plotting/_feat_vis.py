@@ -99,7 +99,7 @@ class FeatFigure(MultiPanelFigure):
         g2_name = "" if self.null_sub_group else self.sub_group
         return (df, g1_name, g2_name)
 
-    def get_hard_zero_axis_lim(
+    def get_hard_zero_axis_limits(
         self,
         val: Iterable[float],
         ax: mpl.axes.Axes,
@@ -107,8 +107,8 @@ class FeatFigure(MultiPanelFigure):
         clip_zero: bool = True,
     ) -> tuple[float, float]:
         llim, ulim = np.min(val), np.max(val)
-        _llim, _ulim = FeatFigure._get_data_lim(ax=ax, which=which)
-        axis_lim = FeatFigure._calc_axis_lim(
+        _llim, _ulim = FeatFigure._get_data_limits(ax=ax, which=which)
+        axis_lim = FeatFigure._calculate_axis_limits(
             (min(llim, _llim), max(ulim, _ulim)),
             axis_pad=self.axis_pad,
             clip_zero=clip_zero,
@@ -138,7 +138,7 @@ class FeatFigure(MultiPanelFigure):
             ):
                 ax.get_legend().remove()
             else:
-                self.redo_legend(ax, n=len(self.sub_cats), title=title)
+                self.update_legend(ax, n=len(self.sub_cats), title=title)
 
     def create_feat_figtitle(
         self,
@@ -425,10 +425,10 @@ def dis(
         _set_func(ag_name)
         plot_title = disfig.titles[i] if disfig.titles is not None else ""
         cur_ax.set_title(plot_title)
-        disfig.set_axis_lim(
+        disfig.set_axis_limits(
             cur_ax,
             which=_which,
-            axis_lim=disfig.get_hard_zero_axis_lim(
+            axis_lim=disfig.get_hard_zero_axis_limits(
                 df[f], ax=cur_ax, which=_which, clip_zero=True
             ),
             force=True,
@@ -437,7 +437,7 @@ def dis(
         if disfig.null_main_group:
             _set_func = cur_ax.set_yticks if swap_axis else cur_ax.set_xticks
             _set_func([])
-        disfig.redo_xy_ticks(cur_ax)
+        disfig.update_xy_ticks(cur_ax)
         disfig.cleanup_ax_legend(cur_ax, idx=i, title=cg_name)
 
     disfig.create_feat_figtitle(disfig.feats, figtitle=figtitle)
@@ -532,11 +532,11 @@ def rel(
             cur_ax.set_xlabel(fp[0])
             cur_ax.set_ylabel(fp[1])
             if j > 0:
-                relfig.redo_xy_lim(cur_ax, clip_zero=False)
+                relfig.update_axis_limits(cur_ax, clip_zero=False)
             else:
-                relfig.set_xy_lim(cur_ax, clip_zero=False, force=True)
+                relfig.set_xy_limits(cur_ax, clip_zero=False, force=True)
             relfig.set_xy_tickloc(cur_ax)
-            relfig.redo_xy_ticks(cur_ax)
+            relfig.update_xy_ticks(cur_ax)
             relfig.cleanup_ax_legend(cur_ax, idx=cur_idx, title=cg_name)
 
     relfig.create_feat_figtitle(relfig.feat_pairs, figtitle=figtitle)

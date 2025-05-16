@@ -408,11 +408,11 @@ def emb(
                 _adata, key=_fkey, ax=cur_ax, title=plot_title, **_plot_params
             )
             if cur_idx > 0:
-                efig.redo_xy_lim(cur_ax)
+                efig.update_xy_limits(cur_ax)
             else:
-                efig.set_xy_lim(cur_ax)
-            efig.redo_xy_ticks(cur_ax)
-            efig.redo_legend(cur_ax)
+                efig.set_xy_limits(cur_ax)
+            efig.update_xy_ticks(cur_ax)
+            efig.update_legend(cur_ax)
 
     _figtitle = efig.create_emb_title(adata, figtitle)
     if _figtitle is not None:
@@ -486,8 +486,8 @@ def annot_emb(
     plot_title = efig.create_emb_title(_adata, title=title)
     _ = get_palette(adata, groupby, efig.palette)
     efig.plot_emb(_adata, key=groupby, ax=cur_ax, title=plot_title, **plot_params)
-    efig.redo_xy_lim(cur_ax)
-    efig.redo_xy_ticks(cur_ax)
+    efig.update_xy_limits(cur_ax)
+    efig.update_xy_ticks(cur_ax)
 
     # Add on plot annotations
     all_pos = (

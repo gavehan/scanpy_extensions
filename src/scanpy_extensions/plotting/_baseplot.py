@@ -192,7 +192,7 @@ class BaseFigure:
 
     # Axis limit methods
     @staticmethod
-    def _calc_axis_lim(
+    def _calculate_axis_limits(
         axis_lim: Tuple[float, float],
         axis_pad: float,
         clip_zero: bool = False,
@@ -215,7 +215,7 @@ class BaseFigure:
             return (axis_lim[0] + lpad, axis_lim[1] + upad)
 
     @staticmethod
-    def _get_data_lim(
+    def _get_data_limits(
         ax: mpl.axes.Axes,
         which: Literal["x", "y"] = "x",
     ) -> Tuple[float, float]:
@@ -227,7 +227,7 @@ class BaseFigure:
             else [data_lim[0][1], data_lim[1][1]]
         )
 
-    def _create_axis_lim(
+    def _create_axis_limits(
         self,
         ax: mpl.axes.Axes,
         which: Literal["x", "y"] = "x",
@@ -236,16 +236,16 @@ class BaseFigure:
     ) -> Tuple[float, float]:
         """Create axis limits with automatic padding."""
         _axis_lim = (
-            BaseFigure._get_data_lim(ax=ax, which=which)
+            BaseFigure._get_data_limits(ax=ax, which=which)
             if axis_lim is None
             else axis_lim
         )
         _range = np.ptp(_axis_lim)
-        return BaseFigure._calc_axis_lim(
+        return BaseFigure._calculate_axis_limits(
             axis_lim=_axis_lim, axis_pad=(_range * self.axis_pad), clip_zero=clip_zero
         )
 
-    def get_axis_lim(
+    def get_axis_limits(
         self,
         ax: mpl.axes.Axes,
         which: Literal["x", "y"] = "x",
@@ -254,23 +254,23 @@ class BaseFigure:
         """Get axis limits, using stored values or calculating from data."""
         axis_lim = self.x_lim if which == "x" else self.y_lim
         return (
-            self._create_axis_lim(ax=ax, which=which, clip_zero=clip_zero)
+            self._create_axis_limits(ax=ax, which=which, clip_zero=clip_zero)
             if axis_lim is None
             else axis_lim
         )
 
-    def get_xy_lim(
+    def get_xy_limits(
         self,
         ax: mpl.axes.Axes,
         clip_zero: bool = False,
     ) -> Tuple[Tuple[float, float], Tuple[float, float]]:
         """Get both x and y axis limits."""
         return (
-            self.get_axis_lim(ax=ax, which="x", clip_zero=clip_zero),
-            self.get_axis_lim(ax=ax, which="y", clip_zero=clip_zero),
+            self.get_axis_limits(ax=ax, which="x", clip_zero=clip_zero),
+            self.get_axis_limits(ax=ax, which="y", clip_zero=clip_zero),
         )
 
-    def set_axis_lim(
+    def set_axis_limits(
         self,
         ax: mpl.axes.Axes,
         which: Literal["x", "y"] = "x",
@@ -284,7 +284,7 @@ class BaseFigure:
         _set_axis_lim = _axis_lim
         if force or _axis_lim is None:
             _set_axis_lim = (
-                self._create_axis_lim(ax=ax, which=which, clip_zero=clip_zero)
+                self._create_axis_limits(ax=ax, which=which, clip_zero=clip_zero)
                 if axis_lim is None
                 else axis_lim
             )
@@ -294,7 +294,7 @@ class BaseFigure:
             self.y_lim = _set_axis_lim
         _set_func(_set_axis_lim[0], _set_axis_lim[1])
 
-    def set_xy_lim(
+    def set_xy_limits(
         self,
         ax: mpl.axes.Axes,
         xaxis_lim: Optional[Tuple[float, float]] = None,
@@ -303,10 +303,10 @@ class BaseFigure:
         force: bool = False,
     ) -> None:
         """Set both x and y axis limits."""
-        self.set_axis_lim(
+        self.set_axis_limits(
             ax=ax, which="x", axis_lim=xaxis_lim, clip_zero=clip_zero, force=force
         )
-        self.set_axis_lim(
+        self.set_axis_limits(
             ax=ax, which="y", axis_lim=yaxis_lim, clip_zero=clip_zero, force=force
         )
 
@@ -318,7 +318,7 @@ class BaseFigure:
     ) -> None:
         """Update axis limits using stored values."""
         _set_func = ax.set_xlim if which == "x" else ax.set_ylim
-        axis_lim = self.get_axis_lim(ax=ax, which=which, clip_zero=clip_zero)
+        axis_lim = self.get_axis_limits(ax=ax, which=which, clip_zero=clip_zero)
         _set_func(axis_lim[0], axis_lim[1])
 
     def update_xy_limits(
