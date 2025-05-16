@@ -338,7 +338,7 @@ def emb(
     )
     efig.create_fig(efig.feats, efig.gb_cats, ax=ax, fig=fig)
     efig.get_emb_size(adata)
-    efig.get_title_textwrap_length()
+    efig.get_title_text_wrap_width()
     _titles = (
         titles
         if isiterable(titles)
@@ -447,7 +447,7 @@ def annot_emb(
     efig.process_emb_inputs(adata, keys=[None], groupby=groupby, basis=basis)
     efig.create_fig([None], [None], ax=ax, fig=fig)
     efig.get_emb_size(adata, scale=(2 / 3))
-    efig.get_title_textwrap_length()
+    efig.get_title_text_wrap_width()
     _adata = efig.prepare_emb_data(adata)
 
     x_pos = adata.obsm[efig.basis][:, 0].ravel()

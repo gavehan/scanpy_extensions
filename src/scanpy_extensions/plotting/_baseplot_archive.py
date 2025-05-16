@@ -698,6 +698,6 @@ class MultiPanelFigure(BaseFigure):
         if isinstance(self.show, bool) and not self.show:
             return self.axs[0][0] if (self._npanels == 1) else self.axs
 
-    def get_title_textwrap_length(self) -> None:
+    def get_title_text_wrap_width(self) -> None:
         if self.title_textwrap_length is None:
             self.title_textwrap_length = max(50, 30 * self._ncols)

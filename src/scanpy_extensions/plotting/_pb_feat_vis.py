@@ -194,7 +194,7 @@ def pb_dis(
     )
     disfig.create_fig(disfig.feats, [None], ax=ax, fig=fig)
     disfig.process_plot_titles(titles)
-    disfig.get_title_textwrap_length()
+    disfig.get_title_text_wrap_width()
 
     plot_selector = {"violin": sns.violinplot, "box": sns.boxplot, "bar": sns.barplot}
     _plot_func = plot_selector[flavor]
@@ -295,7 +295,7 @@ def pb_rel(
     )
     relfig.create_fig(relfig.feat_pairs, relfig.main_cats, ax=ax, fig=fig)
     relfig.process_plot_titles(titles)
-    relfig.get_title_textwrap_length()
+    relfig.get_title_text_wrap_width()
 
     plot_selector = {
         "hist": sns.histplot,
