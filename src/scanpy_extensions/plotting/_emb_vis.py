@@ -295,7 +295,7 @@ class EmbFigure(MultiPanelFigure):
                         ]
                     )
                     _title += "\n".join(
-                        wrap(_wrap_title, width=self.title_textwrap_length)
+                        wrap(_wrap_title, width=self.title_text_wrap_width)
                     )
         return _title
 

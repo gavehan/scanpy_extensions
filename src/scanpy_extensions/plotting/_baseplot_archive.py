@@ -566,7 +566,7 @@ class BaseFigure:
 @dataclass
 class MultiPanelFigure(BaseFigure):
     # Title settings
-    title_textwrap_length: Optional[int] = None
+    title_text_wrap_width: Optional[int] = None
 
     # Matplotlib objects
     fig: Optional[mpl.figure.Figure] = None
@@ -699,5 +699,5 @@ class MultiPanelFigure(BaseFigure):
             return self.axs[0][0] if (self._npanels == 1) else self.axs
 
     def get_title_text_wrap_width(self) -> None:
-        if self.title_textwrap_length is None:
-            self.title_textwrap_length = max(50, 30 * self._ncols)
+        if self.title_text_wrap_width is None:
+            self.title_text_wrap_width = max(50, 30 * self._ncols)

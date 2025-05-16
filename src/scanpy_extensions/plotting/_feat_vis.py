@@ -154,7 +154,7 @@ class FeatFigure(MultiPanelFigure):
                 _wrap_title = ", ".join(
                     ["-".join(f) if isiterable(f) else f for f in feats]
                 )
-                _title += "\n".join(wrap(_wrap_title, width=self.title_textwrap_length))
+                _title += "\n".join(wrap(_wrap_title, width=self.title_text_wrap_width))
                 _title += " by\n"
                 _title += " and ".join(self.groups)
         if _title is not None:

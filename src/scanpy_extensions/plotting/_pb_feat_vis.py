@@ -107,7 +107,7 @@ class PBFeatFigure(FeatFigure):
                 _wrap_title = ", ".join(
                     ["-".join(f) if isiterable(f) else f for f in feats]
                 )
-                _title += "\n".join(wrap(_wrap_title, width=self.title_textwrap_length))
+                _title += "\n".join(wrap(_wrap_title, width=self.title_text_wrap_width))
                 _title += " by\n"
                 _title += " and ".join(self.groups)
         if _title is not None:
@@ -249,7 +249,7 @@ def pb_dis(
         if disfig.null_main_group:
             _set_func = cur_ax.set_yticks if swap_axis else cur_ax.set_xticks
             _set_func([])
-        disfig.redo_xy_ticks(cur_ax)
+        disfig.update_xy_ticks(cur_ax)
         disfig.cleanup_ax_legend(cur_ax, idx=i, title=cg_name)
 
     disfig.create_pb_feat_figtitle(disfig.feats, figtitle=figtitle)
@@ -353,7 +353,7 @@ def pb_rel(
             cur_ax.set_xlabel(fp[0])
             cur_ax.set_ylabel(fp[1])
             if j > 0:
-                relfig.redo_xy_lim(cur_ax, clip_zero=False)
+                relfig.update_xy_limits(cur_ax, clip_zero=False)
             else:
                 x_lim = relfig.get_hard_zero_axis_limits(
                     df[fp[0]], ax=cur_ax, which="x", clip_zero=False
@@ -369,7 +369,7 @@ def pb_rel(
                     force=True,
                 )
             relfig.set_xy_tickloc(cur_ax)
-            relfig.redo_xy_ticks(cur_ax)
+            relfig.update_xy_ticks(cur_ax)
             relfig.cleanup_ax_legend(cur_ax, idx=cur_idx, title=cg_name)
 
     relfig.create_pb_feat_figtitle(relfig.feat_pairs, figtitle=figtitle)
