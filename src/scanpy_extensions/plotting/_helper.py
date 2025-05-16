@@ -215,21 +215,21 @@ def _get_color_palette(
 
 
 # Statistical formatting helpers
-def _format_pvalue(pval: float, return_stars: bool = True) -> str:
+def _format_pvalue(pval: float, as_stars: bool = True) -> str:
     """Format p-value as stars or scientific notation.
 
     Parameters
     ----------
     pval
         P-value to format.
-    return_stars
+    as_stars
         If True, return star symbols. If False, return scientific notation.
 
     Returns
     -------
     Formatted p-value string.
     """
-    if return_stars:
+    if as_stars:
         stars = ""
         for threshold in PVAL_THRESHOLDS:
             if pval <= threshold:

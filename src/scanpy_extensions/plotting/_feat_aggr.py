@@ -379,7 +379,7 @@ class AggrFigure(MultiPanelFigure):
             cur_ax, which="y", axis_lim=(_min, _max), clip_zero=False, force=True
         )
         self.set_axis_tickloc(cur_ax, which="y", max_n_ticks=4)
-        self.update_xy_ticks(cur_ax, **ytick_params)
+        self.update_axis_ticks(cur_ax, **ytick_params)
 
         # Add size legend for dot plots
         cur_ax = self.legend_axd["S"]
@@ -557,7 +557,7 @@ class AggrFigure(MultiPanelFigure):
                 xs,
                 ys,
                 color=self.edge_color,
-                linewidth=self.edge_linewidth,
+                linewidth=self.line_linewidth,
             )
         )
 
@@ -579,9 +579,9 @@ class AggrFigure(MultiPanelFigure):
             keys if self.keys_is_map else {x: self.conj_cats for x in self.feats}
         )
 
-        label_params = self.def_tick_params.copy()
+        label_params = self.default_tick_params.copy()
         label_params.update(
-            AggrFigure._handle_text_rot(
+            AggrFigure._handle_text_rotation(
                 rotation=self.z_rotation, text_loc=("y_l" if self.swap_axis else "x_t")
             )
         )

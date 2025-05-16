@@ -236,7 +236,9 @@ def div_comp_bar(
                 update_config(
                     MPL_PARAMETER_NAMES["s"],
                     get_marker_size(
-                        g_df.shape[0] * g_df.shape[1], figsize=mpfig.figsize
+                        (g_df.shape[0] * g_df.shape[1]),
+                        figsize=mpfig.figsize,
+                        scale=0.1,
                     ),
                     strip_args,
                 )
@@ -263,9 +265,7 @@ def div_comp_bar(
                 update_config("ecolor", mpfig.edge_color, ebar_args)
                 update_config("elinewidth", mpfig.edge_linewidth * 2, ebar_args)
                 update_config(
-                    ["markeredgewidth", "mew"],
-                    plt.rcParams["font.size"],
-                    ebar_args,
+                    MPL_PARAMETER_NAMES["mew"], plt.rcParams["font.size"], ebar_args
                 )
                 update_config("capsize", plt.rcParams["font.size"] / 2, ebar_args)
                 update_config("capthick", mpfig.edge_linewidth, ebar_args)
@@ -334,7 +334,7 @@ def div_comp_bar(
                 ytick_lab = [
                     format_pval(
                         stat_map[c],
-                        return_star=(stat_flavor == "star"),
+                        as_stars=(stat_flavor == "star"),
                     )
                     if c in val_f_cats
                     else "n/a"

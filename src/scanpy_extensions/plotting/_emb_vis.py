@@ -4,7 +4,6 @@ from types import MappingProxyType
 from typing import Any, Optional, Union
 
 import matplotlib as mpl
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import scanpy as sc
@@ -462,7 +461,7 @@ def annot_emb(
         ["path_effects"],
         [
             mpl.patheffects.withStroke(
-                linewidth=plt.rcParams["lines.linewidth"] * 2, foreground="white"
+                linewidth=efig.line_linewidth * 2, foreground="white"
             )
         ],
         _label_args,

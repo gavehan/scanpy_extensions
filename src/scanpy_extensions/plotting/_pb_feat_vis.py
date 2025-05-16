@@ -217,18 +217,24 @@ def pb_dis(
             else get_palette(adata, ag_name, palette=disfig.palette, as_dict=False)
         )
         cur_ax = disfig.get_ax(i, 0, return_idx=False)
-        _plot_func(
+        plot_args = dict(
             data=df,
             x=f if swap_axis else "a_group",
             y="a_group" if swap_axis else f,
             orient="h" if swap_axis else "v",
             order=None if disfig.null_main_group else disfig.main_cats,
-            hue="c_group" if disfig.two_groups else None,
-            hue_order=disfig.sub_cats if disfig.two_groups else None,
+            hue="c_group" if disfig.two_groups else "a_group",
+            hue_order=(
+                disfig.sub_cats
+                if disfig.two_groups
+                else None
+                if disfig.null_main_group
+                else disfig.main_cats
+            ),
             palette=pal,
             ax=cur_ax,
-            **plot_params,
         )
+        _plot_func(**plot_args, **plot_params)
         if seaborn_violin_fix and flavor == "violin" and len(plot_kwargs) == 0:
             for j in range(len(cur_ax.collections)):
                 cur_ax.collections[j].set_edgecolor(disfig.edge_color)

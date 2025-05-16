@@ -19,7 +19,7 @@ from .._validate import (
     validate_layer_and_raw,
 )
 from ..get import obs_categories, obs_data
-from ._baseplot import MultiPanelFigure
+from ._baseplot import MPL_PARAMETER_NAMES, MultiPanelFigure
 from ._helper import get_marker_size, get_palette
 
 
@@ -189,14 +189,14 @@ class DisFigure(FeatFigure):
 
         plot_params = dict(plot_kwargs)
 
-        update_config(["linewidth", "lw"], self.edge_linewidth, plot_params)
+        update_config(MPL_PARAMETER_NAMES["lw"], self.edge_linewidth, plot_params)
         update_config("dodge", self.two_groups, plot_params)
         if flavor == "bar":
-            update_config(["edgecolor", "ec"], self.edge_color, plot_params)
+            update_config(MPL_PARAMETER_NAMES["ec"], self.edge_color, plot_params)
             update_config(("errorbar" if self.sns_ver_13 else "ci"), None, plot_params)
         else:
             if self.sns_ver_13:
-                update_config(["linecolor", "lc"], self.edge_color, plot_params)
+                update_config(MPL_PARAMETER_NAMES["lc"], self.edge_color, plot_params)
             if flavor == "violin":
                 update_config("width", 0.9, plot_params)
                 update_config("inner", None, plot_params)
@@ -307,7 +307,7 @@ class RelFigure(FeatFigure):
             update_config("palette", self.palette, plot_params)
         else:
             update_config(
-                ["facecolor", "facecolors", "fc", "color", "c"], "black", scatter_params
+                (MPL_PARAMETER_NAMES["fc"] + ["color", "c"]), "black", scatter_params
             )
             update_config("legend", False, plot_params)
             update_config("legend", False, scatter_params)
@@ -316,10 +316,8 @@ class RelFigure(FeatFigure):
         update_config(
             "size", get_marker_size(cell_counts, self.figsize), scatter_params
         )
-        update_config(
-            ["linewidth", "linewidths", "lw"], self.edge_linewidth, scatter_params
-        )
-        update_config(["edgecolor", "edgecolors", "ec"], "gray", scatter_params)
+        update_config(MPL_PARAMETER_NAMES["lw"], self.edge_linewidth, scatter_params)
+        update_config(MPL_PARAMETER_NAMES["ec"], "gray", scatter_params)
 
         # hist or kde plots
         if flavor in ["hist", "kde"]:
