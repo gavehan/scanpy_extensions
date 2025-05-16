@@ -1,9 +1,3 @@
-"""Base plotting classes for scanpy extensions.
-
-Provides foundational classes for creating matplotlib-based plots
-with consistent styling and layout management.
-"""
-
 from dataclasses import dataclass, field
 from typing import Any, Dict, Iterable, Literal, Optional, Tuple, Union
 
@@ -12,56 +6,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from .._utilities import RandomState, update_config
-
-# Constants - moved to module level
-TEXT_SEP: str = "@"
-LEGEND_NROWS_MAX: int = 12
-
-
-# Default values (using functions for matplotlib runtime values)
-def get_default_edge_linewidth():
-    """Get default edge line width from matplotlib rcParams."""
-    return plt.rcParams["patch.linewidth"]
-
-
-def get_default_line_linewidth():
-    """Get default edge line width from matplotlib rcParams."""
-    return plt.rcParams["lines.linewidth"]
-
-
-def get_default_figsize():
-    """Get default figure size from matplotlib rcParams."""
-    return plt.rcParams["figure.figsize"]
-
-
-def get_default_legend_fontsize():
-    """Get default legend font size from matplotlib rcParams."""
-    return plt.rcParams["legend.fontsize"]
-
-
-def get_default_legend_markerscale():
-    """Get default legend marker scale from matplotlib rcParams."""
-    return plt.rcParams["legend.markerscale"]
-
-
-# Default constants
-DEFAULT_N_TICKS: int = 3
-DEFAULT_AXIS_PAD: float = 2.5e-2
-DEFAULT_TEXT_WRAP_LENGTH: int = 30
-DEFAULT_LINESPACING: float = 0.9
-DEFAULT_X_ROTATION: float = 90.0
-DEFAULT_Y_ROTATION: int = 0
-DEFAULT_EDGE_COLOR: Union[str, float] = "black"
-DEFAULT_RANDOM_STATE: RandomState = 0
-DEFAULT_TICK_PARAMS: Dict[str, Any] = dict(
-    rotation_mode="anchor",
-    linespacing=DEFAULT_LINESPACING,
-    bbox=dict(
-        alpha=0.0,
-        fill=False,
-        boxstyle="Square,pad=0.1",
-    ),
-)
 
 # Text rotation parameters for different axis positions
 TEXT_LOC_PARAMS = {
@@ -114,38 +58,42 @@ TEXT_ROT_PARAMS = {
     },
 }
 
+TEXT_SEP = "@"
+
+LEGEND_NROWS_MAX = 12
+
 
 @dataclass
 class BaseFigure:
-    """Base class for matplotlib figure configuration and styling.
-
-    Provides common functionality for axis limits, ticks, legends, and styling
-    across different plot types.
-    """
-
-    # Axis and coordinate settings
-    n_ticks: int = DEFAULT_N_TICKS
-    xticklabels_rotation: float = DEFAULT_X_ROTATION
-    yticklabels_rotation: float = DEFAULT_Y_ROTATION
+    # Axis settings
+    n_ticks: int = 3
+    x_rotation: float = 90
+    y_rotation: float = 0
     x_lim: Optional[Tuple[float, float]] = None
     y_lim: Optional[Tuple[float, float]] = None
     x_ticks: Optional[Tuple[Iterable[float], Iterable[str]]] = None
     y_ticks: Optional[Tuple[Iterable[float], Iterable[str]]] = None
-    axis_pad: float = DEFAULT_AXIS_PAD
-
-    # Text and formatting settings
-    text_wrap_width: int = DEFAULT_TEXT_WRAP_LENGTH
-    linespacing: float = DEFAULT_LINESPACING
-    default_tick_params: Dict[str, Any] = field(
-        default_factory=lambda: DEFAULT_TICK_PARAMS.copy()
+    axis_pad: float = 2.5e-2
+    def_tick_params = dict(
+        rotation_mode="anchor",
+        bbox=dict(
+            alpha=0.0,
+            fill=False,
+            boxstyle="Square,pad=0.1",
+        ),
     )
 
-    # Visual styling settings
+    # General text formatting
+    textwrap_length: int = 30
+    linespacing: float = 0.9
+
+    # Visual settings
     color_map: Optional[Union[str, mpl.colors.Colormap]] = None
     palette: Optional[Union[str, mpl.colors.Colormap]] = None
-    edge_color: str = DEFAULT_EDGE_COLOR
-    edge_linewidth: float = field(default_factory=get_default_edge_linewidth)
-    line_linewidth: float = field(default_factory=get_default_line_linewidth)
+    edge_color: str = "black"
+    edge_linewidth: float = field(
+        default_factory=lambda: plt.rcParams["patch.linewidth"]
+    )
 
     # Legend settings
     legend_params: Dict[str, Any] = field(
@@ -153,39 +101,38 @@ class BaseFigure:
             loc="upper left",
             bbox_to_anchor=(1.02, 1.0),
             frameon=False,
-            fontsize=get_default_legend_fontsize(),
-            markerscale=get_default_legend_markerscale(),
+            fontsize=plt.rcParams["legend.fontsize"],
+            markerscale=plt.rcParams["legend.markerscale"],
             framealpha=1.0,
             facecolor="inherit",
             edgecolor="inherit",
-            title_fontsize=get_default_legend_fontsize(),
+            title_fontsize=plt.rcParams["legend.fontsize"],
         )
     )
 
-    # Size and layout settings
-    figsize: Optional[Tuple[float, float]] = field(default_factory=get_default_figsize)
+    # Size settings
+    figsize: Optional[Tuple[float, float]] = field(
+        default_factory=lambda: plt.rcParams["figure.figsize"]
+    )
     fixed_figsize: Optional[Tuple[float, float]] = None
 
-    # Random state
-    random_state: RandomState = DEFAULT_RANDOM_STATE
+    # Random settings
+    random_state: RandomState = 0
 
     def __init__(self, **kwargs):
-        """Initialize BaseFigure with optional keyword arguments."""
         params = dict(kwargs)
         if len(params) > 0:
             for k, v in params.items():
                 if hasattr(self, k):
                     setattr(self, k, v)
-        self.default_tick_params["linespacing"] = self.linespacing
+        self.def_tick_params["linespacing"] = self.linespacing
 
-    # Axis limit methods
     @staticmethod
     def _calc_axis_lim(
         axis_lim: Tuple[float, float],
         axis_pad: float,
         clip_zero: bool = False,
     ) -> Tuple[float, float]:
-        """Calculate axis limits with padding."""
         _is_rev = axis_lim[0] > axis_lim[1]
         if axis_pad == 0:
             return axis_lim
@@ -207,7 +154,6 @@ class BaseFigure:
         ax: mpl.axes.Axes,
         which: Literal["x", "y"] = "x",
     ) -> Tuple[float, float]:
-        """Get data limits from axes."""
         data_lim = ax.dataLim.get_points()
         return (
             [data_lim[0][0], data_lim[1][0]]
@@ -222,7 +168,6 @@ class BaseFigure:
         clip_zero: bool = False,
         axis_lim: Optional[Tuple[float, float]] = None,
     ) -> Tuple[float, float]:
-        """Create axis limits with automatic padding."""
         _axis_lim = (
             BaseFigure._get_data_lim(ax=ax, which=which)
             if axis_lim is None
@@ -239,7 +184,6 @@ class BaseFigure:
         which: Literal["x", "y"] = "x",
         clip_zero: bool = False,
     ) -> Tuple[float, float]:
-        """Get axis limits, using stored values or calculating from data."""
         axis_lim = self.x_lim if which == "x" else self.y_lim
         return (
             self._create_axis_lim(ax=ax, which=which, clip_zero=clip_zero)
@@ -252,7 +196,6 @@ class BaseFigure:
         ax: mpl.axes.Axes,
         clip_zero: bool = False,
     ) -> Tuple[Tuple[float, float], Tuple[float, float]]:
-        """Get both x and y axis limits."""
         return (
             self.get_axis_lim(ax=ax, which="x", clip_zero=clip_zero),
             self.get_axis_lim(ax=ax, which="y", clip_zero=clip_zero),
@@ -266,7 +209,6 @@ class BaseFigure:
         clip_zero: bool = False,
         force: bool = False,
     ) -> None:
-        """Set axis limits on the axes and store them."""
         _set_func = ax.set_xlim if which == "x" else ax.set_ylim
         _axis_lim = self.x_lim if which == "x" else self.y_lim
         _set_axis_lim = _axis_lim
@@ -290,7 +232,6 @@ class BaseFigure:
         clip_zero: bool = False,
         force: bool = False,
     ) -> None:
-        """Set both x and y axis limits."""
         self.set_axis_lim(
             ax=ax, which="x", axis_lim=xaxis_lim, clip_zero=clip_zero, force=force
         )
@@ -298,34 +239,30 @@ class BaseFigure:
             ax=ax, which="y", axis_lim=yaxis_lim, clip_zero=clip_zero, force=force
         )
 
-    def update_axis_limits(
+    def redo_axis_lim(
         self,
         ax: mpl.axes.Axes,
         which: Literal["x", "y"] = "x",
         clip_zero: bool = False,
     ) -> None:
-        """Update axis limits using stored values."""
         _set_func = ax.set_xlim if which == "x" else ax.set_ylim
         axis_lim = self.get_axis_lim(ax=ax, which=which, clip_zero=clip_zero)
         _set_func(axis_lim[0], axis_lim[1])
 
-    def update_xy_limits(
+    def redo_xy_lim(
         self,
         ax: mpl.axes.Axes,
         clip_zero: bool = False,
     ) -> None:
-        """Update both x and y axis limits."""
-        self.update_axis_limits(ax=ax, which="x", clip_zero=clip_zero)
-        self.update_axis_limits(ax=ax, which="y", clip_zero=clip_zero)
+        self.redo_axis_lim(ax=ax, which="x", clip_zero=clip_zero)
+        self.redo_axis_lim(ax=ax, which="y", clip_zero=clip_zero)
 
-    # Tick methods
     @staticmethod
     def create_axis_tickloc(
         n_ticks: int,
         max_n_ticks: Optional[int] = None,
         simple_steps: bool = False,
     ) -> mpl.ticker.MaxNLocator:
-        """Create a tick locator for automatic tick placement."""
         _steps = [1, 2, 2.5, 5, 10] if simple_steps else [1, 2, 2.5, 3, 4, 5, 10]
         return mpl.ticker.MaxNLocator(
             nbins="auto" if max_n_ticks is None else max_n_ticks,
@@ -340,9 +277,8 @@ class BaseFigure:
         n_ticks: Optional[int] = None,
         max_n_ticks: Optional[int] = None,
         simple_steps: bool = False,
-        update_axis_lim: bool = True,
+        redo_axis_lim: bool = True,
     ) -> None:
-        """Set automatic tick locations for an axis."""
         _axis = ax.xaxis if which == "x" else ax.yaxis
         _n_ticks = self.n_ticks if n_ticks is None else n_ticks
         _max_n_ticks = (_n_ticks * 2) if max_n_ticks is None else max_n_ticks
@@ -352,8 +288,8 @@ class BaseFigure:
             )
         )
         _axis.reset_ticks()
-        if update_axis_lim:
-            self.update_axis_limits(ax=ax, which=which)
+        if redo_axis_lim:
+            self.redo_axis_lim(ax=ax, which=which)
         ax.grid(visible=True, which="major", axis=which)
 
     def set_xy_tickloc(
@@ -362,16 +298,15 @@ class BaseFigure:
         n_ticks: Optional[int] = None,
         max_n_ticks: Optional[int] = None,
         simple_steps: bool = False,
-        update_axis_lim: bool = True,
+        redo_axis_lim: bool = True,
     ) -> None:
-        """Set automatic tick locations for both axes."""
         self.set_axis_tickloc(
             ax=ax,
             which="x",
             n_ticks=n_ticks,
             max_n_ticks=max_n_ticks,
             simple_steps=simple_steps,
-            update_axis_lim=update_axis_lim,
+            redo_axis_lim=redo_axis_lim,
         )
         self.set_axis_tickloc(
             ax=ax,
@@ -379,21 +314,19 @@ class BaseFigure:
             n_ticks=n_ticks,
             max_n_ticks=max_n_ticks,
             simple_steps=simple_steps,
-            update_axis_lim=update_axis_lim,
+            redo_axis_lim=redo_axis_lim,
         )
 
     @staticmethod
-    def _handle_text_location(
+    def _handel_text_loc(
         text_loc: Literal["x_b", "x_t", "y_l", "y_r"],
     ) -> Dict[str, Any]:
-        """Get tick parameter dict for text location."""
         return TEXT_LOC_PARAMS[text_loc]
 
     @staticmethod
-    def _handle_text_rotation(
+    def _handle_text_rot(
         rotation: float, text_loc: Literal["x_b", "x_t", "y_l", "y_r"]
     ) -> Dict[str, Any]:
-        """Get text alignment parameters for rotation and location."""
         _rot = rotation % 360
         if "x_" in text_loc:
             _rot_type = "down" if _rot >= 180 else "up" if _rot > 0 else "hz"
@@ -409,7 +342,6 @@ class BaseFigure:
 
     @staticmethod
     def _validate_ticks(labels: Iterable[str]) -> bool:
-        """Check if tick labels are valid (non-empty)."""
         return sum([(lab is not None and len(lab) > 0) for lab in labels]) > 0
 
     def _create_axis_ticks(
@@ -418,7 +350,6 @@ class BaseFigure:
         which: Literal["x", "y"] = "x",
         text_sep: str = TEXT_SEP,
     ) -> Tuple[Iterable[float], Iterable[str]]:
-        """Create tick positions and labels from current axes state."""
         from textwrap import wrap
 
         _get_func = ax.get_xticklabels if which == "x" else ax.get_yticklabels
@@ -437,7 +368,7 @@ class BaseFigure:
             "\n".join(
                 wrap(
                     (lab.split(text_sep)[0] if text_sep in lab else lab),
-                    width=self.text_wrap_width,
+                    width=self.textwrap_length,
                 )
             )
             for lab in tick_lab
@@ -449,7 +380,6 @@ class BaseFigure:
         ax: mpl.axes.Axes,
         which: Literal["x", "y"] = "x",
     ) -> Tuple[Iterable[float], Iterable[str]]:
-        """Get tick positions and labels, using stored values or creating from axes."""
         ticks = self.x_ticks if which == "x" else self.y_ticks
         return self._create_axis_ticks(ax=ax, which=which) if ticks is None else ticks
 
@@ -458,7 +388,6 @@ class BaseFigure:
     ) -> Tuple[
         Tuple[Iterable[float], Iterable[str]], Tuple[Iterable[float], Iterable[str]]
     ]:
-        """Get both x and y tick positions and labels."""
         return (
             self.get_axis_ticks(ax=ax, which="x"),
             self.get_axis_ticks(ax=ax, which="y"),
@@ -473,9 +402,8 @@ class BaseFigure:
         text_rotation: Optional[float] = None,
         **kwargs,
     ) -> None:
-        """Helper to set tick labels with styling."""
         tick_params = dict(kwargs)
-        for k, v in self.default_tick_params.copy().items():
+        for k, v in self.def_tick_params.copy().items():
             update_config(k, v, tick_params)
 
         _set_func = ax.set_xticks if which == "x" else ax.set_yticks
@@ -484,13 +412,9 @@ class BaseFigure:
             labels=ticks[1],
             minor=False,
             **tick_params,
-            **BaseFigure._handle_text_rotation(
-                rotation=text_rotation, text_loc=text_loc
-            ),
+            **BaseFigure._handle_text_rot(rotation=text_rotation, text_loc=text_loc),
         )
-        ax.tick_params(
-            axis=which, **BaseFigure._handle_text_location(text_loc=text_loc)
-        )
+        ax.tick_params(axis=which, **BaseFigure._handel_text_loc(text_loc=text_loc))
         ax.grid(visible=True, which="major", axis=which)
 
     def set_axis_ticks(
@@ -503,10 +427,9 @@ class BaseFigure:
         force: bool = True,
         **kwargs,
     ) -> None:
-        """Set tick labels and positions for an axis."""
         _text_loc = ("x_b" if which == "x" else "y_l") if text_loc is None else text_loc
         _text_rot = (
-            (self.xticklabels_rotation if which == "x" else self.yticklabels_rotation)
+            (self.x_rotation if which == "x" else self.y_rotation)
             if text_rotation is None
             else text_rotation
         )
@@ -544,7 +467,6 @@ class BaseFigure:
         force: bool = True,
         **kwargs,
     ) -> None:
-        """Set tick labels and positions for both axes."""
         self.set_axis_ticks(
             ax=ax,
             which="x",
@@ -564,7 +486,7 @@ class BaseFigure:
             **kwargs,
         )
 
-    def update_axis_ticks(
+    def redo_axis_ticks(
         self,
         ax: mpl.axes.Axes,
         which: Literal["x", "y"] = "x",
@@ -572,10 +494,9 @@ class BaseFigure:
         text_rotation: Optional[float] = None,
         **kwargs,
     ) -> None:
-        """Update tick labels using stored values."""
         _text_loc = ("x_b" if which == "x" else "y_l") if text_loc is None else text_loc
         _text_rot = (
-            (self.xticklabels_rotation if which == "x" else self.yticklabels_rotation)
+            (self.x_rotation if which == "x" else self.y_rotation)
             if text_rotation is None
             else text_rotation
         )
@@ -592,7 +513,7 @@ class BaseFigure:
                 **kwargs,
             )
 
-    def update_xy_ticks(
+    def redo_xy_ticks(
         self,
         ax: mpl.axes.Axes,
         x_text_loc: Optional[Literal["x_b", "x_t", "y_l", "y_r"]] = None,
@@ -601,7 +522,6 @@ class BaseFigure:
         y_text_rotation: Optional[float] = None,
         **kwargs,
     ) -> None:
-        """Update tick labels for both axes."""
         self.set_axis_ticks(
             ax=ax,
             which="x",
@@ -617,15 +537,13 @@ class BaseFigure:
             **kwargs,
         )
 
-    # Legend methods
-    def update_legend(
+    def redo_legend(
         self,
         ax: mpl.axes.Axes,
         n: Optional[int] = None,
         title: Optional[str] = None,
         **kwargs,
     ) -> None:
-        """Update legend styling and properties."""
         _legend = ax.get_legend()
         if _legend is None:
             return
@@ -647,14 +565,8 @@ class BaseFigure:
 
 @dataclass
 class MultiPanelFigure(BaseFigure):
-    """Extension of BaseFigure for multi-panel layouts.
-
-    Handles creation and management of subplot grids with shared axes
-    and consistent styling across panels.
-    """
-
     # Title settings
-    title_text_wrap_width: Optional[int] = None
+    title_textwrap_length: Optional[int] = None
 
     # Matplotlib objects
     fig: Optional[mpl.figure.Figure] = None
@@ -666,18 +578,26 @@ class MultiPanelFigure(BaseFigure):
     hspace: Optional[float] = 2.5e-2
     sharex: bool = False
     sharey: bool = False
-    _nrows: int = 1
-    _ncols: int = 1
-    _nvar1: int = 1
-    _nvar2: int = 1
-    _npanels: int = 1
-    _col_by_var1: bool = True
+    _nrows = 1
+    _ncols = 1
+    _nvar1 = 1
+    _nvar2 = 1
+    _npanels = 1
+    _col_by_var1 = True
 
     # Save settings
     show: Optional[bool] = None
     save: Optional[Union[bool, str]] = None
 
-    # Public interface methods
+    # def __post_init__(self):
+    #     # super().__post_init__()
+    #     self._nrows = 1
+    #     self._ncols = 1
+    #     self._nvar1 = 1
+    #     self._nvar2 = 1
+    #     self._npanels = 1
+    #     self._col_by_var1 = True
+
     def create_fig(
         self,
         var1: Iterable[Any],
@@ -685,7 +605,6 @@ class MultiPanelFigure(BaseFigure):
         ax: Optional[mpl.axes.Axes] = None,
         fig: Optional[mpl.figure.Figure] = None,
     ) -> None:
-        """Create figure with subplot grid for multi-panel layout."""
         null_var1 = sum([x is not None for x in var1]) == 0
         null_var2 = sum([x is not None for x in var2]) == 0
         self._nvar1 = len(var1)
@@ -736,7 +655,6 @@ class MultiPanelFigure(BaseFigure):
     def get_ax(
         self, idx_var1: int, idx_var2: int, return_idx: bool = False
     ) -> Union[mpl.axes.Axes, Tuple[mpl.axes.Axes, int]]:
-        """Get axes for specific panel by variable indices."""
         idx_ax = (
             (idx_var2 * self._nvar1 + idx_var1)
             if self._col_by_var1
@@ -745,19 +663,7 @@ class MultiPanelFigure(BaseFigure):
         _ax = self.axs[(idx_ax // self._ncols)][(idx_ax % self._ncols)]
         return (_ax, idx_ax) if return_idx else _ax
 
-    def save_or_show(
-        self, plot_name: str
-    ) -> Optional[Union[mpl.axes.Axes, Iterable[mpl.axes.Axes]]]:
-        """Save figure or show, returning axes if show=False."""
-        from scanpy.plotting._utils import savefig_or_show
-
-        _ = savefig_or_show(plot_name, show=self.show, save=self.save)
-        if isinstance(self.show, bool) and not self.show:
-            return self.axs[0][0] if (self._npanels == 1) else self.axs
-
-    # Helper methods
     def cleanup_shared_axis(self, sharex: bool = True, sharey: bool = True) -> None:
-        """Remove redundant axis labels when sharing axes."""
         idx_ax = 0
         max_n_ax = self._npanels
         while idx_ax < max_n_ax:
@@ -775,7 +681,6 @@ class MultiPanelFigure(BaseFigure):
         return
 
     def cleanup(self) -> None:
-        """Remove empty subplot panels."""
         idx_ax = self._npanels
         max_n_ax = self._nrows * self._ncols
         while idx_ax < max_n_ax:
@@ -784,7 +689,15 @@ class MultiPanelFigure(BaseFigure):
             idx_ax += 1
         return
 
-    def get_title_text_wrap_width(self) -> None:
-        """Calculate appropriate text wrap width for titles based on number of columns."""
-        if self.title_text_wrap_width is None:
-            self.title_text_wrap_width = max(50, 30 * self._ncols)
+    def save_or_show(
+        self, plot_name: str
+    ) -> Optional[Union[mpl.axes.Axes, Iterable[mpl.axes.Axes]]]:
+        from scanpy.plotting._utils import savefig_or_show
+
+        _ = savefig_or_show(plot_name, show=self.show, save=self.save)
+        if isinstance(self.show, bool) and not self.show:
+            return self.axs[0][0] if (self._npanels == 1) else self.axs
+
+    def get_title_textwrap_length(self) -> None:
+        if self.title_textwrap_length is None:
+            self.title_textwrap_length = max(50, 30 * self._ncols)
