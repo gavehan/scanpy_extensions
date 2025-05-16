@@ -9,7 +9,7 @@ from ._comp_vis import comp_bar, div_comp_bar
 from ._emb_vis import annot_emb, emb
 from ._feat_aggr import aggr
 from ._feat_vis import dis, rel
-from ._helper import format_pval, get_figsize, get_palette, get_scatter_size
+from ._helper import format_pval, get_figsize, get_marker_size, get_palette
 from ._pb_feat_vis import pb_dis, pb_rel
 from ._volcano import volcano
 
@@ -66,7 +66,7 @@ __all__ = [
     "div_comp_bar",
     "dis",
     "rel",
-    "get_scatter_size",
+    "get_marker_size",
     "format_pval",
     "get_palette",
     "volcano",

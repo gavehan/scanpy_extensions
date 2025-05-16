@@ -13,8 +13,8 @@ from scanpy import logging as logg
 from .._utilities import RandomState, update_config
 from .._validate import isiterable, validate_groupby
 from ..get import obs_categories, sample_fractions
-from ._baseplot import MultiPanelFigure
-from ._helper import format_pval, get_palette
+from ._baseplot import MPL_PARAMETER_NAMES, MultiPanelFigure
+from ._helper import format_pval, get_marker_size, get_palette
 
 
 def _get_comp_axis_label(groups: Union[str, tuple[str, str]], norm: bool) -> str:
@@ -116,8 +116,8 @@ def comp_bar(
     mpfig.create_fig(gfeats, [None], ax=ax, fig=fig)
 
     plot_params = dict(plot_kwargs)
-    update_config(["edgecolor", "ec"], mpfig.edge_color, plot_params)
-    update_config(["linewidth", "lw"], mpfig.edge_linewidth, plot_params)
+    update_config(MPL_PARAMETER_NAMES["ec"], mpfig.edge_color, plot_params)
+    update_config(MPL_PARAMETER_NAMES["lw"], mpfig.edge_linewidth, plot_params)
 
     for i, gf in enumerate(gfeats):
         cur_ax = mpfig.get_ax(i, 0)
@@ -141,9 +141,9 @@ def comp_bar(
             which="x",
             axis_lim=(-0.5, len(obs_categories(adata, groups[0])) - 0.5),
         )
-        mpfig.redo_xy_lim(cur_ax)
-        mpfig.redo_xy_ticks(cur_ax)
-        mpfig.redo_legend(cur_ax)
+        mpfig.update_xy_limits(cur_ax)
+        mpfig.update_xy_ticks(cur_ax)
+        mpfig.update_legend(cur_ax)
 
     _set_figtitle(mpfig, groups, norm, figtitle)
 
@@ -228,9 +228,18 @@ def div_comp_bar(
             if add_strip:
                 strip_args = args.copy()
                 strip_args.update(dict(strip_kwargs))
-                update_config(["edgecolor", "ec"], mpfig.edge_color, strip_args)
-                update_config(["alpha", "a"], 1 / 3, strip_args)
-                update_config(["linewidth", "lw"], mpfig.edge_linewidth, strip_args)
+                update_config(MPL_PARAMETER_NAMES["ec"], mpfig.edge_color, strip_args)
+                update_config(MPL_PARAMETER_NAMES["a"], 1 / 3, strip_args)
+                update_config(
+                    MPL_PARAMETER_NAMES["lw"], mpfig.edge_linewidth, strip_args
+                )
+                update_config(
+                    MPL_PARAMETER_NAMES["s"],
+                    get_marker_size(
+                        g_df.shape[0] * g_df.shape[1], figsize=mpfig.figsize
+                    ),
+                    strip_args,
+                )
                 update_config("jitter", True, strip_args)
                 sns.stripplot(data=g_df, palette=g_pal, zorder=1.1, **strip_args)
 
@@ -242,12 +251,12 @@ def div_comp_bar(
                     ebar_args,
                 )
                 update_config(
-                    ["markersize", "ms"],
+                    MPL_PARAMETER_NAMES["ms"],
                     plt.rcParams["font.size"] / 2,
                     ebar_args,
                 )
                 update_config(
-                    ["markerfacecolor", "mfc"],
+                    MPL_PARAMETER_NAMES["mfc"],
                     mpfig.edge_color,
                     ebar_args,
                 )
@@ -341,15 +350,15 @@ def div_comp_bar(
                 secax_y.set_ylabel("")
 
         cur_ax.set_xlabel(_get_comp_axis_label(groups, norm))
-        mpfig.redo_axis_lim(cur_ax, which="x", clip_zero=True)
+        mpfig.update_axis_limits(cur_ax, which="x", clip_zero=True)
         mpfig.set_axis_tickloc(cur_ax, which="x")
         xticks = mpfig.get_axis_ticks(cur_ax, which="x")
         cur_ax.set_xticks(
             xticks[0],
             [lab.replace("-", "").replace("\u2212", "") for lab in xticks[1]],
         )
-        mpfig.redo_xy_ticks(cur_ax)
-        mpfig.redo_legend(
+        mpfig.update_xy_ticks(cur_ax)
+        mpfig.update_legend(
             cur_ax, n=2, title="", loc="best", bbox_to_anchor=None, frameon=True
         )
 

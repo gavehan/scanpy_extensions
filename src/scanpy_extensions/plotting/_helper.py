@@ -68,7 +68,7 @@ def get_palette(
         return colors
 
 
-def get_scatter_size(
+def get_marker_size(
     cell_count: int, figsize: Optional[tuple[float, float]] = None, scale: float = 1.0
 ) -> float:
     from numpy import sqrt

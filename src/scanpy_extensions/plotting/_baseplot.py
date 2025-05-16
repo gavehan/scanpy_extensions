@@ -13,9 +13,21 @@ import numpy as np
 
 from .._utilities import RandomState, update_config
 
-# Constants - moved to module level
+# Constants
 TEXT_SEP: str = "@"
 LEGEND_NROWS_MAX: int = 12
+MPL_PARAMETER_NAMES: Dict[str, Iterable[str]] = dict(
+    lw=["linewidth", "linewidths", "lw"],
+    ec=["edgecolor", "edgecolors", "ec"],
+    fc=["facolor", "facecolors", "fc"],
+    lc=["linecolor", "linecolors", "lc"],
+    a=["alpha", "a"],
+    s=["size", "sizes", "s"],
+    ms=["markersize", "ms"],
+    mec=["markeredgecolor", "mec"],
+    mew=["markeredgewidth", "mew"],
+    mfc=["markerfacecolor", "mfc"],
+)
 
 
 # Default values (using functions for matplotlib runtime values)
@@ -163,7 +175,7 @@ class BaseFigure:
     )
 
     # Size and layout settings
-    figsize: Optional[Tuple[float, float]] = field(default_factory=get_default_figsize)
+    figsize: Tuple[float, float] = field(default_factory=get_default_figsize)
     fixed_figsize: Optional[Tuple[float, float]] = None
 
     # Random state
@@ -345,10 +357,9 @@ class BaseFigure:
         """Set automatic tick locations for an axis."""
         _axis = ax.xaxis if which == "x" else ax.yaxis
         _n_ticks = self.n_ticks if n_ticks is None else n_ticks
-        _max_n_ticks = (_n_ticks * 2) if max_n_ticks is None else max_n_ticks
         _axis.set_major_locator(
             BaseFigure.create_axis_tickloc(
-                n_ticks=_n_ticks, max_n_ticks=_max_n_ticks, simple_steps=simple_steps
+                n_ticks=_n_ticks, max_n_ticks=max_n_ticks, simple_steps=simple_steps
             )
         )
         _axis.reset_ticks()
@@ -469,8 +480,8 @@ class BaseFigure:
         ax: mpl.axes.Axes,
         which: Literal["x", "y"] = "x",
         ticks: Optional[Tuple[Iterable[float], Iterable[str]]] = None,
-        text_loc: Optional[Literal["x_b", "x_t", "y_l", "y_r"]] = None,
-        text_rotation: Optional[float] = None,
+        text_loc: Literal["x_b", "x_t", "y_l", "y_r"] = "x_b",
+        text_rotation: float = 90,
         **kwargs,
     ) -> None:
         """Helper to set tick labels with styling."""
@@ -536,10 +547,10 @@ class BaseFigure:
         self,
         ax: mpl.axes.Axes,
         x_ticks: Optional[Tuple[Iterable[float], Iterable[str]]] = None,
-        x_text_loc: Optional[Literal["x_b", "x_t", "y_l", "y_r"]] = None,
+        x_text_loc: Optional[Literal["x_b", "x_t"]] = None,
         x_text_rotation: Optional[float] = None,
         y_ticks: Optional[Tuple[Iterable[float], Iterable[str]]] = None,
-        y_text_loc: Optional[Literal["x_b", "x_t", "y_l", "y_r"]] = None,
+        y_text_loc: Optional[Literal["y_l", "y_r"]] = None,
         y_text_rotation: Optional[float] = None,
         force: bool = True,
         **kwargs,
@@ -595,9 +606,9 @@ class BaseFigure:
     def update_xy_ticks(
         self,
         ax: mpl.axes.Axes,
-        x_text_loc: Optional[Literal["x_b", "x_t", "y_l", "y_r"]] = None,
+        x_text_loc: Optional[Literal["x_b", "x_t"]] = None,
         x_text_rotation: Optional[float] = None,
-        y_text_loc: Optional[Literal["x_b", "x_t", "y_l", "y_r"]] = None,
+        y_text_loc: Optional[Literal["y_l", "y_r"]] = None,
         y_text_rotation: Optional[float] = None,
         **kwargs,
     ) -> None:

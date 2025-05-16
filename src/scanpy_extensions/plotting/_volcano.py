@@ -11,7 +11,7 @@ import seaborn as sns
 
 from .._utilities import update_config
 from ._baseplot import MultiPanelFigure
-from ._helper import get_scatter_size
+from ._helper import get_marker_size
 
 
 def volcano(
@@ -113,7 +113,7 @@ def volcano(
         y=neg_log_pval_key,
         linewidth=0.0,
         edgecolor="none",
-        s=get_scatter_size(df.shape[0], mpfig.figsize, 0.5),
+        s=get_marker_size(df.shape[0], mpfig.figsize, 0.5),
         hue=cls_key,
         legend=False,
         palette=[mpfig.palette[1], mpfig.palette[0], mpfig.palette[2]],

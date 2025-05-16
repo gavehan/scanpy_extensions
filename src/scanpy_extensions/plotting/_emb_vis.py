@@ -18,7 +18,7 @@ from .._validate import (
 )
 from ..get import obs_categories, obs_data
 from ._baseplot import MultiPanelFigure
-from ._helper import get_palette, get_scatter_size
+from ._helper import get_marker_size, get_palette
 
 
 @dataclass
@@ -49,7 +49,7 @@ class EmbFigure(MultiPanelFigure):
                 if self.groupby is None
                 else adata.obs[self.groupby].value_counts().mean()
             )
-            self.size = get_scatter_size(cell_count, figsize=self.figsize, scale=scale)
+            self.size = get_marker_size(cell_count, figsize=self.figsize, scale=scale)
 
     @staticmethod
     def _process_basis(adata: sc.AnnData, basis: Optional[str] = None) -> str:

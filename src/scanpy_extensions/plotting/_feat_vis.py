@@ -20,7 +20,7 @@ from .._validate import (
 )
 from ..get import obs_categories, obs_data
 from ._baseplot import MultiPanelFigure
-from ._helper import get_palette, get_scatter_size
+from ._helper import get_marker_size, get_palette
 
 
 @dataclass
@@ -314,7 +314,7 @@ class RelFigure(FeatFigure):
 
         # scatter plot
         update_config(
-            "size", get_scatter_size(cell_counts, self.figsize), scatter_params
+            "size", get_marker_size(cell_counts, self.figsize), scatter_params
         )
         update_config(
             ["linewidth", "linewidths", "lw"], self.edge_linewidth, scatter_params
