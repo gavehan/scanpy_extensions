@@ -325,7 +325,7 @@ def div_comp_bar(
 
                     pvals = multitest.multipletests(
                         pvals, alpha=5e-2, method="fdr_bh", is_sorted=False
-                    )[0]
+                    )[1]
                 stat_map = dict(zip(val_f_cats, pvals))
                 secax_y = cur_ax.secondary_yaxis(
                     "right", functions=(lambda x: x, lambda x: x)

@@ -138,16 +138,13 @@ def _create_color_palette(
     """
     if palette is None:
         return _get_default_color_cycle()[:n_colors]
-
-    if isinstance(palette, str):
+    elif isinstance(palette, str):
         # Assume it's a colormap name
         cmap = mpl.colormaps[palette]
         return _extract_colors_from_colormap(cmap, n_colors)
-
-    if isinstance(palette, mpl.colors.Colormap):
+    elif isinstance(palette, mpl.colors.Colormap):
         return _extract_colors_from_colormap(palette, n_colors)
-
-    if isiterable(palette):
+    elif isiterable(palette):
         # Direct color specification
         colors = list(palette)
         # Extend with cycling if needed
@@ -163,7 +160,7 @@ def _get_color_palette(
     adata: sc.AnnData,
     key: str,
     palette: Optional[Union[str, Iterable[str], mpl.colors.Colormap]] = None,
-    force_update: bool = True,
+    force_update: bool = False,
     as_dict: bool = False,
 ) -> Union[dict[str, str], list[str]]:
     """Get or create color palette for categorical data.
@@ -193,21 +190,18 @@ def _get_color_palette(
     color_key = f"{key}_colors"
 
     # Check for existing colors
-    if color_key in adata.uns and not force_update and palette is None:
-        colors = adata.uns[color_key]
+    if color_key in adata.uns.keys() and not force_update and palette is None:
+        colors = list(adata.uns[color_key])
     else:
         # Create new palette
-        colors = _create_color_palette(palette, len(categories))
-        if key is not None:
-            adata.uns[color_key] = colors
-
-    # Ensure we have the right number of colors
-    if len(colors) < len(categories):
-        # Extend with default cycle if needed
-        default_colors = _get_default_color_cycle()
-        while len(colors) < len(categories):
-            colors.extend(default_colors)
-        colors = colors[: len(categories)]
+        colors = list(_create_color_palette(palette, len(categories)))
+        # Ensure we have the right number of colors
+        if len(colors) < len(categories):
+            # Extend with default cycle if needed
+            default_colors = _get_default_color_cycle()
+            while len(colors) < len(categories):
+                colors.extend(default_colors)
+            colors = colors[: len(categories)]
         if key is not None:
             adata.uns[color_key] = colors
 

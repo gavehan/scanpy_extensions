@@ -4,6 +4,7 @@ from types import MappingProxyType
 from typing import Any, Optional, Union
 
 import matplotlib as mpl
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import scanpy as sc
@@ -194,10 +195,11 @@ class EmbFigure(MultiPanelFigure):
         if key is None:
             update_config("legend_loc", None, _plot_params)
             if self.palette is None:
+                self.feat_pal = ["black"]
                 update_config("palette", ["black"], _plot_params)
             _plot_data = pd.Series(
-                [""] * plot_adata.shape[0], index=plot_adata.obs_names
-            )
+                [True] * plot_adata.shape[0], index=plot_adata.obs_names
+            ).astype("category")
         else:
             _plot_data = obs_data(
                 plot_adata,
@@ -224,6 +226,7 @@ class EmbFigure(MultiPanelFigure):
                 update_config("vmax", _max, _plot_params)
             else:
                 self.feat_pal = get_palette(og_adata, key=key, palette=self.palette)
+                update_config("palette", self.feat_pal, _plot_params)
 
         return _plot_data, _plot_params
 
@@ -382,17 +385,28 @@ def emb(
                 _adata.obs[_fkey] = pd.Series(
                     [np.nan if efig.feat_is_num else pd.NA] * _adata.shape[0],
                     index=_adata.obs_names,
+                    dtype=_adata.obs[fkey].dtype,
                 )
-                _val = _adata.obs.loc[_subset_idx, fkey].copy()
-                _adata.obs.loc[_subset_idx, _fkey] = (
+                _val = (
                     efig.get_smoothed_feat(
                         _adata, key=fkey, subset_idx=_subset_idx, **smooth_params
                     )
-                    if (smooth and efig.feat_is_num)
-                    else _val
+                    if (efig.feat_is_num and smooth)
+                    else _adata.obs.loc[_subset_idx, fkey].copy()
                 )
-            if efig.feat_pal is not None:
-                _adata.uns[f"{_fkey}_colors"] = efig.feat_pal
+                _adata.obs.loc[_subset_idx, _fkey] = _val
+                if not efig.feat_is_num:
+                    og_feat_cats = _adata.obs[fkey].cat.categories
+                    cur_feat_cats = _adata.obs[_fkey].cat.categories
+                    cat_sorted_idx = [
+                        og_feat_cats.get_loc(c) for c in cur_feat_cats if not pd.isna(c)
+                    ]
+                    _adata.obs[_fkey].cat.reorder_categories(
+                        og_feat_cats[cat_sorted_idx]
+                    )
+                    _adata.uns[f"{_fkey}_colors"] = list(
+                        np.array(efig.feat_pal)[cat_sorted_idx]
+                    )
             plot_title = _titles[cur_idx] if _titles is not None else None
             if isinstance(titles, bool):
                 plot_title = ""
@@ -436,8 +450,6 @@ def annot_emb(
     plot_kwargs: Mapping[str, Any] = MappingProxyType({}),
     **kwargs,
 ) -> Optional[Union[mpl.axes.Axes, Iterable[mpl.axes.Axes]]]:
-    from adjustText import adjust_text
-
     params = dict(kwargs)
     update_config("x_rotation", 0, params)
     update_config("y_rotation", 90, params)
@@ -447,16 +459,17 @@ def annot_emb(
     efig.create_fig([None], [None], ax=ax, fig=fig)
     efig.get_emb_size(adata, scale=(2 / 3))
     efig.get_title_text_wrap_width()
+    _ = get_palette(adata, groupby, efig.palette)
     _adata = efig.prepare_emb_data(adata)
 
     x_pos = adata.obsm[efig.basis][:, 0].ravel()
     y_pos = adata.obsm[efig.basis][:, 1].ravel()
 
-    _label_args = dict(label_kwargs)
-    update_config(["verticalalignment", "va"], "center", _label_args)
-    update_config(["horizontalalignment", "ha"], "center", _label_args)
-    update_config(["color", "c"], "black", _label_args)
-    update_config(["fontweight", "weight"], "bold", _label_args)
+    label_params = dict(label_kwargs)
+    update_config(["verticalalignment", "va"], "center", label_params)
+    update_config(["horizontalalignment", "ha"], "center", label_params)
+    update_config(["color", "c"], "black", label_params)
+    update_config(["fontweight", "weight"], "bold", label_params)
     update_config(
         ["path_effects"],
         [
@@ -464,17 +477,32 @@ def annot_emb(
                 linewidth=efig.line_linewidth * 2, foreground="white"
             )
         ],
-        _label_args,
+        label_params,
+    )
+    update_config(
+        "bbox",
+        dict(
+            alpha=0.8,
+            boxstyle="Square,pad=0.05",
+            facecolor="w",
+            edgecolor="none",
+            lw=0.0,
+        ),
+        label_params,
     )
 
-    _textloc_args = dict(textloc_kwargs)
-    update_config(["avoid_self"], True, _textloc_args)
+    textloc_params = dict(textloc_kwargs)
     update_config(
-        ["explode_radius"],
-        np.linalg.norm([np.ptp(x_pos), np.ptp(y_pos)]) / 8,
-        _textloc_args,
+        "textsize", [plt.rcParams["font.size"]] * len(efig.gb_cats), textloc_params
     )
-    update_config(["time_lim"], 2.0, _textloc_args)
+    update_config("linewidth", efig.edge_linewidth, textloc_params)
+    update_config("linecolor", efig.edge_color, textloc_params)
+    update_config("avoid_label_lines_overlap", True, textloc_params)
+    update_config("min_distance", 5e-3, textloc_params)
+    update_config("max_distance", 0.25, textloc_params)
+    # update_config("seed", mpfig.random_state, textloc_params)
+    update_config("nbr_candidates", int(5e3), textloc_params)
+    textloc_params.update(label_params)
 
     cur_ax = efig.get_ax(0, 0)
     plot_params = dict(
@@ -483,7 +511,6 @@ def annot_emb(
     )
     plot_params.update(dict(plot_kwargs))
     plot_title = efig.create_emb_title(_adata, title=title)
-    _ = get_palette(adata, groupby, efig.palette)
     efig.plot_emb(_adata, key=groupby, ax=cur_ax, title=plot_title, **plot_params)
     efig.update_xy_limits(cur_ax)
     efig.update_xy_ticks(cur_ax)
@@ -495,11 +522,10 @@ def annot_emb(
         .median()
         .sort_index()
     )
-    texts = []
-    for t, row in all_pos.iterrows():
-        texts.append(cur_ax.text(row["x"], row["y"], t, **_label_args))
 
     if do_textloc:
+        import textalloc as ta
+
         if adata.shape[0] > 1e3:
             from geosketch import gs
 
@@ -508,12 +534,18 @@ def annot_emb(
             )
         else:
             _idx = np.arange(adata.shape[0])
-        adjust_text(
-            texts,
-            x=x_pos[_idx],
-            y=y_pos[_idx],
+
+        ta.allocate(
             ax=cur_ax,
-            **_textloc_args,
+            x=all_pos["x"].to_numpy().ravel(),
+            y=all_pos["y"].to_numpy().ravel(),
+            text_list=all_pos.index.to_numpy().ravel(),
+            x_scatter=x_pos[_idx],
+            y_scatter=y_pos[_idx],
+            **textloc_params,
         )
+    else:
+        for t, row in all_pos.iterrows():
+            cur_ax.text(row["x"], row["y"], t, **label_params)
 
     return efig.save_or_show(f"annot_{efig.basis}")

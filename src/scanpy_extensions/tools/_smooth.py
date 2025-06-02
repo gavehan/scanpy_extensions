@@ -17,7 +17,7 @@ def _smooth_over_graph(
 ) -> pd.Series:
     from scipy.sparse import issparse
 
-    _val = val.copy()
+    _val = val.copy() if isinstance(val, pd.Series) else val.squeeze()
     _val[np.isnan(_val)] = na_fill
     _sparse_g = issparse(graph)
     g = graph.copy()

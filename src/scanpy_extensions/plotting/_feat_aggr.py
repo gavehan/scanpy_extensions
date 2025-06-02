@@ -21,24 +21,27 @@ from ._baseplot import TEXT_SEP, MultiPanelFigure
 
 def _scale_avgs(
     avgs_df: pd.DataFrame,
-    scale_method: Literal["minmax", "max"] = "max",
+    scale_method: Optional[Literal["minmax", "max"]] = "max",
 ) -> pd.Series:
     """Scale average expression values."""
-    # Group by variable to get min/max values
-    _avg_gby = avgs_df[["variable", "avg"]].groupby(["variable"])
-    min_dict = _avg_gby.min().squeeze().to_dict()
-    max_dict = _avg_gby.max().squeeze().to_dict()
+    if scale_method is None:
+        return avgs_df["avg"].copy()
+    else:
+        # Group by variable to get min/max values
+        _avg_gby = avgs_df[["variable", "avg"]].groupby(["variable"])
+        min_dict = _avg_gby.min().squeeze().to_dict()
+        max_dict = _avg_gby.max().squeeze().to_dict()
 
-    # Scale each value according to the selected method
-    data = {}
-    for i, row in avgs_df.iterrows():
-        var, val = row["variable"], row["avg"]
-        _min, _max = min_dict[var], max_dict[var]
-        _bot = (_max - _min) if scale_method == "minmax" else _max
-        _top = (val - _min) if scale_method == "minmax" else val
-        data[i] = 0 if (_bot == 0) else (_top / _bot)
+        # Scale each value according to the selected method
+        data = {}
+        for i, row in avgs_df.iterrows():
+            var, val = row["variable"], row["avg"]
+            _min, _max = min_dict[var], max_dict[var]
+            _bot = (_max - _min) if scale_method == "minmax" else _max
+            _top = (val - _min) if scale_method == "minmax" else val
+            data[i] = 0 if (_bot == 0) else (_top / _bot)
 
-    return pd.Series(data)
+        return pd.Series(data)
 
 
 @dataclass
@@ -153,7 +156,7 @@ class AggrFigure(MultiPanelFigure):
         layer: Optional[str] = None,
         use_raw: Optional[bool] = None,
         undo_log: bool = True,
-        scale_method: Literal["minmax", "max"] = "max",
+        scale_method: Optional[Literal["minmax", "max"]] = "max",
     ) -> pd.DataFrame:
         from collections import Counter
 
@@ -178,7 +181,9 @@ class AggrFigure(MultiPanelFigure):
 
         if undo_log:
             df[self._feats] = df[self._feats].transform(np.expm1)
-        df[[f"{c}_b" for c in self._feats]] = df[self._feats] > 0.0
+        df_b = (df[self._feats] > 0.0).copy()
+        df_b.columns = [f"{c}_b" for c in self._feats]
+        df = pd.concat([df, df_b], axis=1)
         df = df.groupby(self.groups, observed=False, dropna=False).mean().reset_index()
         if undo_log:
             df[self._feats] = df[self._feats].transform(np.log1p)
@@ -632,7 +637,7 @@ def aggr(
     layer: Optional[str] = None,
     use_raw: Optional[bool] = None,
     undo_log: bool = True,
-    scale_method: Literal["minmax", "max"] = "max",
+    scale_method: Optional[Literal["minmax", "max"]] = "max",
     flavor: Literal["dot", "matrix"] = "dot",
     swap_axis: bool = False,
     fig: Optional[mpl.figure.Figure] = None,
