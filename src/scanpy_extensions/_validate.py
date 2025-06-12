@@ -41,7 +41,7 @@ def validate_keys(
     return _is_num
 
 
-def validate_groupby(adata: sc.AnnData, groupby: Union[str, Iterable[str]]) -> None:
+def validate_groupby(adata: sc.AnnData, groupby: Union[str, Iterable[str]]) -> bool:
     _groupby = groupby if isiterable(groupby) else [groupby]
     for g in _groupby:
         if g not in adata.obs.keys():
@@ -50,7 +50,7 @@ def validate_groupby(adata: sc.AnnData, groupby: Union[str, Iterable[str]]) -> N
             raise TypeError(f"Key {g} in .obs.columns is numeric dtype.")
         elif not is_categorical_dtype(adata.obs[g]):
             logg.warning(f"Key {g} in .obs.columns is not 'category' dtype.")
-    return
+    return True
 
 
 def validate_layer_and_raw(

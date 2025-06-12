@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import scanpy as sc
+from scanpy import logging as logg
 
 from .._utilities import update_config
 from .._validate import (
@@ -71,6 +72,7 @@ class EmbFigure(MultiPanelFigure):
         use_raw: Optional[bool] = None,
         smooth: bool = False,
         obsp_key: Optional[str] = None,
+        smooth_neighbors_params: Mapping[str, Any] = MappingProxyType({}),
     ) -> None:
         self.null_feats = keys is None
         self.feats = [None] if self.null_feats else keys if isiterable(keys) else [keys]
@@ -87,26 +89,24 @@ class EmbFigure(MultiPanelFigure):
         self.layer, self.use_raw = validate_layer_and_raw(adata, layer, use_raw)
 
         self.smooth = smooth
-        # _obsp_key = "connectivities" if obsp_key is None else obsp_key
-        _obsp_key = f"{self.basis}_connectivities" if obsp_key is None else obsp_key
-        if smooth and (_obsp_key not in adata.obsp.keys()):
-            from scanpy import logging as logg
+        if self.smooth:
+            if obsp_key is None:
+                from ..preprocessing._neighbors import get_conn_and_dist
 
-            from ..preprocessing._neighbors import sklearn_neighbors
+                start_neighbors = logg.info("computing neighbors.")
 
-            _nn = max(10, int(np.round(np.log10(adata.shape[0]))))
-            logg.warning(
-                f"`{self.basis}_connectivities` not present in .obsp and neighbors with n_neighbors={_nn} will be calculated."
-            )
-            sklearn_neighbors(
-                adata,
-                n_neighbors=_nn,
-                n_pcs=2,
-                use_rep=self.basis,
-                key_added=self.basis,
-            )
+                self.ng = get_conn_and_dist(
+                    adata,
+                    only_conn=True,
+                    groupby=self.groupby,
+                    **smooth_neighbors_params,
+                )
 
-        self.ng = adata.obsp[_obsp_key] if smooth else None
+                logg.debug("computed neighbors.", time=start_neighbors)
+            else:
+                self.ng = adata.obsp[obsp_key]
+        else:
+            self.ng = None
 
     def prepare_emb_data(self, adata: sc.AnnData) -> sc.AnnData:
         from scipy.sparse import csr_matrix
@@ -137,50 +137,6 @@ class EmbFigure(MultiPanelFigure):
             self.ng = self.ng[_int_idx, :][:, _int_idx].copy()
         return _adata[obs_idx, :].copy() if self.shuffle_order else _adata
 
-    def get_smoothed_feat(
-        self,
-        adata: sc.AnnData,
-        key: str,
-        subset_idx: Optional[pd.Index] = None,
-        **kwargs,
-    ) -> pd.Series:
-        from ..tools._smooth import _smooth_over_graph
-
-        if subset_idx is None:
-            return pd.Series(
-                _smooth_over_graph(
-                    adata.obs[key], self.ng, undo_log=self.smooth_undo_log, **kwargs
-                ),
-                index=adata.obs_names,
-            )
-        else:
-            return pd.Series(
-                _smooth_over_graph(
-                    adata.obs.loc[subset_idx, key],
-                    self.ng[subset_idx, :][:, subset_idx],
-                    undo_log=self.smooth_undo_log,
-                    **kwargs,
-                ),
-                index=adata.obs_names[subset_idx],
-            )
-
-    def get_smooth_minmax(
-        self, adata: sc.AnnData, key: str, **kwargs
-    ) -> tuple[float, float]:
-        if self.groupby is None:
-            val = self.get_smoothed_feat(adata, key=key, **kwargs)
-            return (val.min(), val.max())
-        else:
-            _min, _max = np.inf, -np.inf
-            for g in self.gb_cats:
-                _subset_idx = adata.obs[self.groupby] == g
-                val = self.get_smoothed_feat(
-                    adata, key=key, subset_idx=_subset_idx, **kwargs
-                )
-                _min = min(_min, np.min(val))
-                _max = max(_max, np.max(val))
-            return (_min, _max)
-
     def prepare_plot_data(
         self,
         plot_adata: sc.AnnData,
@@ -190,6 +146,8 @@ class EmbFigure(MultiPanelFigure):
         plot_params: Mapping[str, Any] = MappingProxyType({}),
         smooth_params: Mapping[str, Any] = MappingProxyType({}),
     ) -> tuple[pd.Series, Mapping[str, Any]]:
+        from ..tools._smooth import _smooth_over_graph
+
         _plot_params = dict(plot_params)
         _plot_data = None
         if key is None:
@@ -217,13 +175,18 @@ class EmbFigure(MultiPanelFigure):
                 (key not in og_adata.obs.columns) if undo_log is None else undo_log
             )
             if self.feat_is_num:
-                _min, _max = (
-                    self.get_smooth_minmax(plot_adata, key=key, **smooth_params)
-                    if self.smooth
-                    else (plot_adata.obs[key].min(), plot_adata.obs[key].max())
-                )
-                update_config("vmin", _min, _plot_params)
-                update_config("vmax", _max, _plot_params)
+                if self.smooth:
+                    _plot_data = pd.Series(
+                        _smooth_over_graph(
+                            _plot_data,
+                            graph=self.ng,
+                            undo_log=self.smooth_undo_log,
+                            **smooth_params,
+                        ),
+                        index=plot_adata.obs_names,
+                    )
+                update_config("vmin", _plot_data.min(), _plot_params)
+                update_config("vmax", _plot_data.max(), _plot_params)
             else:
                 self.feat_pal = get_palette(og_adata, key=key, palette=self.palette)
                 update_config("palette", self.feat_pal, _plot_params)
@@ -320,6 +283,7 @@ def emb(
     vcenter: Optional[float] = None,
     plot_kwargs: Mapping[str, Any] = MappingProxyType({}),
     smooth_kwargs: Mapping[str, Any] = MappingProxyType({}),
+    smooth_neighbors_kwargs: Mapping[str, Any] = MappingProxyType({}),
     **kwargs,
 ) -> Optional[Union[mpl.axes.Axes, Iterable[mpl.axes.Axes]]]:
     params = dict(kwargs)
@@ -328,6 +292,8 @@ def emb(
     update_config("axis_pad", 5e-2, params)
     efig = EmbFigure(**params)
 
+    smooth_neighbors_params = dict()
+    smooth_neighbors_params.update(dict(smooth_neighbors_kwargs))
     efig.process_emb_inputs(
         adata,
         keys=keys,
@@ -337,6 +303,7 @@ def emb(
         use_raw=use_raw,
         smooth=smooth,
         obsp_key=obsp_key,
+        smooth_neighbors_params=smooth_neighbors_params,
     )
     efig.create_fig(efig.feats, efig.gb_cats, ax=ax, fig=fig)
     efig.get_emb_size(adata)
@@ -359,7 +326,7 @@ def emb(
         vcenter=vcenter,
     )
     plot_params.update(dict(plot_kwargs))
-    smooth_params = dict(scale=False)
+    smooth_params = dict(scale=False, z_score=False)
     smooth_params.update(dict(smooth_kwargs))
     fkey = "_feat"
     _fkey = "_color"
@@ -374,27 +341,12 @@ def emb(
         )
         for j, c in enumerate(efig.gb_cats):
             cur_ax, cur_idx = efig.get_ax(i, j, return_idx=True)
-            if c is None:
-                _adata.obs[_fkey] = (
-                    efig.get_smoothed_feat(_adata, key=fkey, **smooth_params)
-                    if (smooth and efig.feat_is_num)
-                    else _adata.obs[fkey]
-                )
-            else:
+            _adata.obs[_fkey] = _adata.obs[fkey].copy()
+            if c is not None:
                 _subset_idx = _adata.obs[groupby] == c
-                _adata.obs[_fkey] = pd.Series(
-                    [np.nan if efig.feat_is_num else pd.NA] * _adata.shape[0],
-                    index=_adata.obs_names,
-                    dtype=_adata.obs[fkey].dtype,
+                _adata.obs.loc[~_subset_idx, _fkey] = (
+                    np.nan if efig.feat_is_num else pd.NA
                 )
-                _val = (
-                    efig.get_smoothed_feat(
-                        _adata, key=fkey, subset_idx=_subset_idx, **smooth_params
-                    )
-                    if (efig.feat_is_num and smooth)
-                    else _adata.obs.loc[_subset_idx, fkey].copy()
-                )
-                _adata.obs.loc[_subset_idx, _fkey] = _val
                 if not efig.feat_is_num:
                     og_feat_cats = _adata.obs[fkey].cat.categories
                     cur_feat_cats = _adata.obs[_fkey].cat.categories
@@ -407,6 +359,7 @@ def emb(
                     _adata.uns[f"{_fkey}_colors"] = list(
                         np.array(efig.feat_pal)[cat_sorted_idx]
                     )
+
             plot_title = _titles[cur_idx] if _titles is not None else None
             if isinstance(titles, bool):
                 plot_title = ""
