@@ -75,7 +75,7 @@ class FeatFigure(MultiPanelFigure):
 
         self.sns_ver_13 = Version(sns.__version__) >= Version("0.13.0")
 
-    def prepare_pb_feat_data(
+    def prepare_feat_data(
         self,
         adata: sc.AnnData,
         feats: Iterable[str],
@@ -207,7 +207,7 @@ class DisFigure(FeatFigure):
                     "density_norm" if self.sns_ver_13 else "scale", "width", plot_params
                 )
                 update_config("gridsize", int(1e2), plot_params)
-                update_config("cut", 0.5, plot_params)
+                update_config("cut", 1.5, plot_params)
                 if n_color_cats == 2:
                     update_config("split", True, plot_params)
                 if not self.two_groups:
@@ -376,7 +376,7 @@ def dis(
 
     _which = "x" if swap_axis else "y"
     for i, f in enumerate(disfig.feats):
-        df, ag_name, cg_name = disfig.prepare_pb_feat_data(
+        df, ag_name, cg_name = disfig.prepare_feat_data(
             adata, feats=[f], main_group_key="a_group", sub_group_key="c_group"
         )
         pal = (
@@ -486,7 +486,7 @@ def rel(
     )
 
     for i, fp in enumerate(relfig.feat_pairs):
-        df, pg_name, cg_name = relfig.prepare_pb_feat_data(
+        df, pg_name, cg_name = relfig.prepare_feat_data(
             adata,
             feats=fp,
             main_group_key="p_group",

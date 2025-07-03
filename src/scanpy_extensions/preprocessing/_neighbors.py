@@ -54,6 +54,10 @@ def _calc_conn_and_dist(
     _n_pcs = min(30, adata.obsm[use_rep].shape[1]) if n_pcs is None else n_pcs
     rep = _choose_representation(adata, use_rep=use_rep, n_pcs=_n_pcs)
 
+    logg.debug(
+        f"using n_neighbors={n_neighbors}, use_rep={use_rep}, n_pcs={_n_pcs}, metric={metric}, method={method}."
+    )
+
     knt_params = dict(**kwargs)
     update_config("n_jobs", sc.settings.n_jobs, knt_params)
     if method == "sklearn":
@@ -139,7 +143,7 @@ def get_conn_and_dist(
             _adata = adata[_subset].copy()
             _conn, _dist = _calc_conn_and_dist(
                 _adata,
-                n_neighbors=n_neighbors,
+                n_neighbors=_n_neighbors,
                 n_pcs=n_pcs,
                 use_rep=use_rep,
                 metric=metric,

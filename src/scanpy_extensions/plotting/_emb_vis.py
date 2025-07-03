@@ -353,7 +353,7 @@ def emb(
                     cat_sorted_idx = [
                         og_feat_cats.get_loc(c) for c in cur_feat_cats if not pd.isna(c)
                     ]
-                    _adata.obs[_fkey].cat.reorder_categories(
+                    _adata.obs[_fkey] = _adata.obs[_fkey].cat.reorder_categories(
                         og_feat_cats[cat_sorted_idx]
                     )
                     _adata.uns[f"{_fkey}_colors"] = list(
@@ -445,9 +445,6 @@ def annot_emb(
     )
 
     textloc_params = dict(textloc_kwargs)
-    update_config(
-        "textsize", [plt.rcParams["font.size"]] * len(efig.gb_cats), textloc_params
-    )
     update_config("linewidth", efig.edge_linewidth, textloc_params)
     update_config("linecolor", efig.edge_color, textloc_params)
     update_config("avoid_label_lines_overlap", True, textloc_params)
@@ -478,25 +475,57 @@ def annot_emb(
 
     if do_textloc:
         import textalloc as ta
+        from scipy.spatial import ConvexHull
 
-        if adata.shape[0] > 1e3:
-            from geosketch import gs
-
-            _idx = gs(
-                adata.obsm[efig.basis], int(1e3), replace=False, seed=efig.random_state
-            )
-        else:
-            _idx = np.arange(adata.shape[0])
-
-        ta.allocate(
-            ax=cur_ax,
-            x=all_pos["x"].to_numpy().ravel(),
-            y=all_pos["y"].to_numpy().ravel(),
-            text_list=all_pos.index.to_numpy().ravel(),
-            x_scatter=x_pos[_idx],
-            y_scatter=y_pos[_idx],
-            **textloc_params,
+        emb_pos = pd.DataFrame(adata.obsm[efig.basis][:, :2], index=adata.obs_names)
+        emb_pos = (emb_pos - emb_pos.min(axis=0)) / (
+            emb_pos.max(axis=0) - emb_pos.min(axis=0)
         )
+        emb_range = np.linalg.norm(np.ptp(emb_pos, axis=0))
+
+        emb_pos[groupby] = adata.obs[groupby].copy()
+        group_sizes = {}
+        for c in efig.gb_cats:
+            _emb_pos = emb_pos.loc[emb_pos[groupby] == c, [0, 1]].copy()
+            group_sizes[c] = ConvexHull(_emb_pos).volume
+        group_sizes = pd.Series(group_sizes) / emb_range
+        print(group_sizes)
+        group_sizes = group_sizes < 5e-2
+
+        large_groups = group_sizes.index[~group_sizes]
+        if len(large_groups) > 0:
+            for t, row in all_pos.loc[large_groups].iterrows():
+                cur_ax.text(row["x"], row["y"], t, **label_params)
+
+        small_groups = group_sizes.index[group_sizes]
+        if len(small_groups) > 0:
+            update_config(
+                "textsize",
+                [plt.rcParams["font.size"]] * len(small_groups),
+                textloc_params,
+            )
+
+            if adata.shape[0] > 1e3:
+                from geosketch import gs
+
+                _idx = gs(
+                    adata.obsm[efig.basis],
+                    int(1e3),
+                    replace=False,
+                    seed=efig.random_state,
+                )
+            else:
+                _idx = np.arange(adata.shape[0])
+
+            ta.allocate(
+                ax=cur_ax,
+                x=all_pos.loc[small_groups, "x"].to_numpy().ravel(),
+                y=all_pos.loc[small_groups, "y"].to_numpy().ravel(),
+                text_list=all_pos.loc[small_groups].index.to_numpy().ravel(),
+                x_scatter=x_pos[_idx],
+                y_scatter=y_pos[_idx],
+                **textloc_params,
+            )
     else:
         for t, row in all_pos.iterrows():
             cur_ax.text(row["x"], row["y"], t, **label_params)

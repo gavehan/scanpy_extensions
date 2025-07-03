@@ -72,11 +72,12 @@ class AggrFigure(MultiPanelFigure):
     cnorm: Optional[mpl.colors.Normalize] = None
 
     # Dot plot settings
+    dot_marker: str = "o"
     dot_power: float = 1.5
     dot_size: float = field(default_factory=lambda: plt.rcParams["font.size"] * 8)
 
     # Rotation settings
-    z_rotation: float = 0
+    z_rotation: Optional[float] = None
 
     # Legend settings
     legend_color_title: str = "Scaled\navg. exp."
@@ -130,7 +131,8 @@ class AggrFigure(MultiPanelFigure):
             )
 
         self.flavor = flavor
-        self.z_rotation = 0 if swap_axis else 90
+        if self.z_rotation is None:
+            self.z_rotation = 0 if swap_axis else 90
         self.axis_pad = 0.0 if flavor == "matrix" else 2.5e-2
         self.swap_axis = swap_axis
 
@@ -352,6 +354,15 @@ class AggrFigure(MultiPanelFigure):
         else:
             self.main_ax = sfigs[0].subplots()
 
+        self.axs = [self.main_ax, self.legend_axd["C"]]
+        self._npanels = 2
+        if self.flavor == "dot":
+            self.axs.append(self.legend_axd["S"])
+            self._npanels += 1
+        if self.annotated:
+            self.axs.append(self.annot_ax)
+            self._npanels += 1
+
     def plot_legend(self, data: pd.DataFrame) -> None:
         """Plot the legend section."""
         # Configure label parameters
@@ -430,6 +441,7 @@ class AggrFigure(MultiPanelFigure):
                 edgecolor=self.edge_color,
                 linewidth=self.edge_linewidth,
                 clip_on=False,
+                marker=self.dot_marker,
             )
 
             # Configure size legend appearance
@@ -474,6 +486,7 @@ class AggrFigure(MultiPanelFigure):
             "cmap": self.color_map,
             "linewidth": self.edge_linewidth,
             "norm": self.cnorm,
+            "marker": self.dot_marker,
         }
 
         # Determine which columns to use for x and y axis
@@ -629,6 +642,112 @@ class AggrFigure(MultiPanelFigure):
         AggrFigure._cleanup_ax(cur_ax)
 
 
+@dataclass
+class PBAggrFigure(AggrFigure):
+    dot_marker: str = "s"
+    dot_power: float = 1.5
+    dot_size: float = field(default_factory=lambda: plt.rcParams["font.size"] * 8)
+
+    def prepare_pb_aggr_data(
+        self,
+        adata: sc.AnnData,
+        layer: Optional[str] = None,
+        use_raw: Optional[bool] = None,
+        undo_log: bool = True,
+        scale_method: Optional[Literal["minmax", "max"]] = "max",
+        pb_group: str = "sample",
+    ) -> pd.DataFrame:
+        from collections import Counter
+
+        _groups = [pb_group] + self.groups
+        pb_cats = obs_categories(adata, pb_group)
+        df = obs_data(
+            adata,
+            self.feats + _groups,
+            layer=layer,
+            use_raw=use_raw,
+            as_series=False,
+        )
+
+        counter = Counter(self.feats)
+        self._feats = []
+        for f in self.feats:
+            if counter[f] > 1:
+                counter[f] -= 1
+                _f = f"{f}{TEXT_SEP}{counter[f]}"
+            else:
+                _f = f
+            self._feats.append(_f)
+        df.columns = self._feats + _groups
+
+        if undo_log:
+            df[self._feats] = df[self._feats].transform(np.expm1)
+        df = (
+            df.groupby(_groups, observed=False, dropna=False)
+            .mean()
+            .fillna(0.0)
+            .reset_index()
+        )
+        df_b = (df[self._feats] > 0.0).copy()
+        df_b.columns = [f"{c}_b" for c in self._feats]
+        df = pd.concat([df, df_b], axis=1)
+        for g in self.groups:
+            if len(pb_cats) == (
+                (pd.crosstab(adata.obs[pb_group], adata.obs[g]) > 0).sum(axis=1).sum()
+            ):
+                g_map = dict(zip(adata.obs[pb_group], adata.obs[g]))
+                df = df.loc[
+                    df.apply(
+                        lambda row: str(g_map[row[pb_group]]) == str(row[g]), axis=1
+                    )
+                ].copy()
+        df = (
+            df.loc[:, (df.columns != pb_group)]
+            .groupby(self.groups, observed=False, dropna=False)
+            .mean()
+            .reset_index()
+        )
+        if undo_log:
+            df[self._feats] = df[self._feats].transform(np.log1p)
+        df.iloc[:, len(self.groups) :] = df.iloc[:, len(self.groups) :].fillna(0.0)
+
+        avg_df = df.iloc[:, : -len(self._feats)].melt(id_vars=self.groups)
+        avg_df.index = AggrFigure._concat_str_series(
+            df=avg_df, x_key="variable", y_key=self.groups
+        )
+
+        if self.flavor == "dot":
+            bin_cols = list(range(len(self.groups))) + [
+                (i + len(self.groups) + len(self._feats))
+                for i in range(len(self._feats))
+            ]
+            pct_df = df.iloc[:, bin_cols].melt(id_vars=self.groups)
+            pct_df["variable"] = pct_df["variable"].map(lambda x: str(x)[:-2])
+            pct_df.index = AggrFigure._concat_str_series(
+                df=pct_df, x_key="variable", y_key=self.groups
+            )
+
+        data = (
+            pd.merge(
+                avg_df.rename({"value": "avg"}, axis=1),
+                pct_df.rename({"value": "pct"}, axis=1)["pct"],
+                left_index=True,
+                right_index=True,
+            )
+            if self.flavor == "dot"
+            else avg_df.rename({"value": "avg"}, axis=1)
+        )
+        data.index.name = None
+        data["scaled_avg"] = _scale_avgs(data, scale_method)
+
+        if self.flavor == "dot":
+            data["pct_dot"] = (
+                (data["pct"] ** self.dot_power) / (data["pct"].max() ** self.dot_power)
+            ) * self.dot_size
+
+        return data
+
+
 def aggr(
     adata: sc.AnnData,
     keys: Union[str, Iterable[str], Mapping[str, Any]],
@@ -660,6 +779,51 @@ def aggr(
         use_raw=_use_raw,
         undo_log=undo_log,
         scale_method=scale_method,
+    )
+    afig.create_aggr_fig(adata, data, keys, fig=fig)
+    afig.plot_legend(data)
+    afig.plot_main(data)
+    if afig.annotated:
+        afig.plot_annot(keys)
+
+    del data
+    return afig.save_or_show(flavor)
+
+
+def pb_aggr(
+    adata: sc.AnnData,
+    keys: Union[str, Iterable[str], Mapping[str, Any]],
+    groupby: Union[str, Tuple[str, str]],
+    groupby_kind: Literal["single", "conjugate"] = "single",
+    pb_group: str = "sample",
+    layer: Optional[str] = None,
+    use_raw: Optional[bool] = None,
+    undo_log: bool = True,
+    scale_method: Optional[Literal["minmax", "max"]] = "max",
+    flavor: Literal["dot", "matrix"] = "dot",
+    swap_axis: bool = False,
+    fig: Optional[mpl.figure.Figure] = None,
+    **kwargs,
+) -> Optional[Union[mpl.axes.Axes, Iterable[mpl.axes.Axes]]]:
+    validate_groupby(adata, pb_group)
+    params = dict(kwargs)
+    afig = PBAggrFigure(**params)
+    afig.process_aggr_inputs(
+        adata,
+        keys=keys,
+        groupby=groupby,
+        groupby_kind=groupby_kind,
+        flavor=flavor,
+        swap_axis=swap_axis,
+    )
+    _layer, _use_raw = validate_layer_and_raw(adata, layer, use_raw)
+    data = afig.prepare_pb_aggr_data(
+        adata,
+        layer=_layer,
+        use_raw=_use_raw,
+        undo_log=undo_log,
+        scale_method=scale_method,
+        pb_group=pb_group,
     )
     afig.create_aggr_fig(adata, data, keys, fig=fig)
     afig.plot_legend(data)

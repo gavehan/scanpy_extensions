@@ -22,6 +22,7 @@ def volcano(
     lfc_thres: float = np.log2(1.5),
     pval_thres: float = 5e-2,
     clip_frac: float = 1e-3,
+    center_x: bool = True,
     class_names: tuple[str, str, str] = ["Down reg.", "Not sig.", "Up reg."],
     legend_length: float = 1.0,
     title: Optional[str] = None,
@@ -58,14 +59,14 @@ def volcano(
     update_config("palette", ["tab:blue", "tab:grey", "tab:red"], params)
     mpfig = MultiPanelFigure(**params)
     _fig = plt.figure(figsize=mpfig.figsize) if fig is None else fig
-    mpfig.axs = _fig.subplots(2, 1, height_ratios=(1, 9))
+    mpfig.axs = _fig.subplots(2, 1, height_ratios=(1, 9), squeeze=False)
 
     textloc_params = dict(textloc_kwargs)
     update_config("textsize", [plt.rcParams["font.size"]] * annot_n, textloc_params)
     update_config("linewidth", mpfig.edge_linewidth, textloc_params)
     update_config("linecolor", mpfig.edge_color, textloc_params)
     update_config("avoid_label_lines_overlap", True, textloc_params)
-    update_config("min_distance", 5e-3, textloc_params)
+    update_config("min_distance", 1e-2, textloc_params)
     update_config("max_distance", 0.5, textloc_params)
     # update_config("seed", mpfig.random_state, textloc_params)
     update_config("nbr_candidates", int(5e3), textloc_params)
@@ -86,7 +87,7 @@ def volcano(
         textloc_params,
     )
 
-    cur_ax = mpfig.axs[0]
+    cur_ax = mpfig.axs[0, 0]
     cur_ax.set_xlim(0.0, 2.5 + (legend_length * 1.5))
     cur_ax.axis("off")
     if title is not None:
@@ -106,7 +107,7 @@ def volcano(
             marker="s",
         )
 
-    cur_ax = mpfig.axs[1]
+    cur_ax = mpfig.axs[1, 0]
     sns.scatterplot(
         data=df.sort_values(cls_key),
         x=lfc_key,
@@ -121,8 +122,17 @@ def volcano(
         ax=cur_ax,
     )
     cur_ax.set_xlabel(r"$Log_2$" + " FC")
-    cur_ax.set_ylabel("-" + r"$Log_{10}$" + " Adj. P-value")
+    cur_ax.set_ylabel("-" + r"$Log_{10}$" + " adj. P-value")
     mpfig.set_xy_limits(cur_ax, clip_zero=False)
+    if center_x:
+        x_max = np.max(np.abs(cur_ax.get_xlim()))
+        mpfig.set_axis_limits(
+            cur_ax,
+            which="x",
+            axis_lim=((-1 * x_max), x_max),
+            clip_zero=False,
+            force=True,
+        )
     mpfig.set_xy_tickloc(cur_ax)
     mpfig.set_xy_ticks(cur_ax)
 

@@ -7,7 +7,7 @@ import seaborn as sns
 
 from ._comp_vis import comp_bar, div_comp_bar
 from ._emb_vis import annot_emb, emb
-from ._feat_aggr import aggr
+from ._feat_aggr import aggr, pb_aggr
 from ._feat_vis import dis, rel
 from ._helper import format_pval, get_figsize, get_marker_size, get_palette
 from ._pb_feat_vis import pb_dis, pb_rel

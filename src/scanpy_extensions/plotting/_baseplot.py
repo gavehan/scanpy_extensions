@@ -791,28 +791,30 @@ class MultiPanelFigure(BaseFigure):
         """Remove redundant axis labels when sharing axes."""
         idx_ax = 0
         max_n_ax = self._npanels
-        while idx_ax < max_n_ax:
-            _idx_row = idx_ax // self._ncols
-            _idx_col = idx_ax % self._ncols
-            cur_ax = self.axs[_idx_row, _idx_col]
-            if sharex and (
-                _idx_row < (self._nrows - 1)
-                and self.axs[(_idx_row + 1)][_idx_col].has_data()
-            ):
-                cur_ax.set_xlabel("")
-            if sharey and (_idx_col > 0):
-                cur_ax.set_ylabel("")
-            idx_ax += 1
+        if max_n_ax > 1:
+            while idx_ax < max_n_ax:
+                _idx_row = idx_ax // self._ncols
+                _idx_col = idx_ax % self._ncols
+                cur_ax = self.axs[_idx_row, _idx_col]
+                if sharex and (
+                    _idx_row < (self._nrows - 1)
+                    and self.axs[(_idx_row + 1)][_idx_col].has_data()
+                ):
+                    cur_ax.set_xlabel("")
+                if sharey and (_idx_col > 0):
+                    cur_ax.set_ylabel("")
+                idx_ax += 1
         return
 
     def cleanup(self) -> None:
         """Remove empty subplot panels."""
         idx_ax = self._npanels
         max_n_ax = self._nrows * self._ncols
-        while idx_ax < max_n_ax:
-            _idx_ax = idx_ax
-            self.axs[(_idx_ax // self._ncols)][(_idx_ax % self._ncols)].remove()
-            idx_ax += 1
+        if idx_ax > 1:
+            while idx_ax < max_n_ax:
+                _idx_ax = idx_ax
+                self.axs[(_idx_ax // self._ncols)][(_idx_ax % self._ncols)].remove()
+                idx_ax += 1
         return
 
     def get_title_text_wrap_width(self) -> None:

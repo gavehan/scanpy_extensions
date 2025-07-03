@@ -7,16 +7,16 @@ for matplotlib and seaborn styling.
 import matplotlib.pyplot as plt
 
 # Layout padding constants
-CONSTRAINED_LAYOUT_PAD_ARTICLE = 1 / 24
-CONSTRAINED_LAYOUT_PAD_POSTER = 1 / 48
-SUBPLOT_SPACING_TIGHT = 1e-2
+CONSTRAINED_LAYOUT_PAD_ARTICLE = 1 / 36
+CONSTRAINED_LAYOUT_PAD_POSTER = 1 / 72
+SUBPLOT_SPACING_TIGHT = 1e-3
 
 # Font and size constants
 ARTICLE_BASE_FONTSIZE = 6.0
 POSTER_BASE_FONTSIZE = 18.0
 DEFAULT_DPI_ARTICLE = 150
 DEFAULT_DPI_POSTER = 60
-SAVE_DPI = 400
+SAVE_DPI = 300
 
 # Color constants
 GRID_COLOR = "#ababab"
@@ -58,10 +58,10 @@ BASE_MPL_PARAMS = {
     "mathtext.default": "regular",
     # Axes
     "axes.linewidth": 0.5,
-    "axes.titlesize": 7.5,
+    "axes.titlesize": 7.0,
     "axes.titleweight": "normal",
     "axes.titlepad": 4.0,
-    "axes.labelsize": 7.5,
+    "axes.labelsize": 7.0,
     "axes.labelpad": 2.0,
     "axes.labelweight": "normal",
     "axes.axisbelow": True,
@@ -92,7 +92,7 @@ BASE_MPL_PARAMS = {
     # Figure
     "figure.titlesize": 9.0,
     "figure.titleweight": "bold",
-    "figure.labelsize": 7.5,
+    "figure.labelsize": 7.0,
     "figure.labelweight": "normal",
     "figure.figsize": ARTICLE_FIGURE_SIZE,
     "figure.subplot.left": 0.05,

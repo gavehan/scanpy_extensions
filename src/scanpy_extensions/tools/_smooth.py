@@ -71,7 +71,7 @@ def smooth_over_neighbors(
     assert groupby is None or validate_groupby(adata, groupby)
     assert sum([z_score, scale]) < 2, "cannot specify both 'z_score' and 'scale'."
 
-    start = logg.info(f"computing smooth over neighbors for {key}.")
+    start = logg.info(f"computing smooth over neighbors for '{key}'.")
 
     _layer, _use_raw = validate_layer_and_raw(adata, layer, use_raw)
     validate_keys(adata, key)
@@ -82,7 +82,7 @@ def smooth_over_neighbors(
     )
 
     if obsp_key is None:
-        start_neighbors = logg.info("computing neighbors.")
+        start_neighbors = logg.debug("computing neighbors.")
 
         _n_graph = get_conn_and_dist(
             adata,
@@ -108,10 +108,10 @@ def smooth_over_neighbors(
         undo_log=_undo_log,
     )
 
-    logg.debug(f"computed {key} smoothed over neighbors.", time=start)
+    logg.info(f"computed {key} smoothed over neighbors.", time=start)
     if inplace:
         _key = f"{key}_son" if key_added is None else key_added
-        logg.debug(f"added to obs['{_key}'].", time=start)
+        logg.info(f"added to obs['{_key}'].", time=start)
         adata.obs[_key] = smooth_val
     else:
         return smooth_val

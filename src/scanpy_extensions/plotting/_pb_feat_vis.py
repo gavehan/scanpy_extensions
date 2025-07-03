@@ -64,20 +64,25 @@ class PBFeatFigure(FeatFigure):
         for i, f in enumerate(feats):
             if _undo_log[i]:
                 df[f] = np.expm1(df[f])
-        df = df.groupby(self.pb_group, observed=False).mean().fillna(0.0)
-        df = df.loc[[c for c in self.pb_cats if c in df.index]]
+
+        if self.null_main_group:
+            df[main_group_key] = ""
+            df = df.groupby(self.pb_group, observed=False).mean().fillna(0.0)
+            df = df.loc[[c for c in self.pb_cats if c in df.index]]
+        else:
+            df[main_group_key] = adata.obs[self.main_group]
+            df = (
+                df.groupby([self.pb_group, main_group_key], observed=False)
+                .mean()
+                .fillna(0.0)
+                .reset_index()
+                .set_index(self.pb_group, drop=True)
+            )
+        g1_name = "" if self.null_main_group else self.main_group
+
         for i, f in enumerate(feats):
             if _undo_log[i]:
                 df[f] = np.log1p(df[f])
-
-        df[main_group_key] = ""
-        if not self.null_main_group:
-            g_map = dict(zip(adata.obs[self.pb_group], adata.obs[self.main_group]))
-            df[main_group_key] = df.index.map(g_map).astype("category")
-            df[main_group_key] = df[main_group_key].cat.set_categories(
-                self.main_cats, rename=True
-            )
-        g1_name = "" if self.null_main_group else self.main_group
 
         df[sub_group_key] = ""
         if not self.null_sub_group:
