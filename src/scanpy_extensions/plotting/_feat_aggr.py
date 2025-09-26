@@ -21,10 +21,10 @@ from ._baseplot import TEXT_SEP, MultiPanelFigure
 
 def _scale_avgs(
     avgs_df: pd.DataFrame,
-    scale_method: Optional[Literal["minmax", "max"]] = "max",
+    scale_method: Optional[Literal["minmax", "max", "none"]] = "max",
 ) -> pd.Series:
     """Scale average expression values."""
-    if scale_method is None:
+    if scale_method is None or scale_method == "none":
         return avgs_df["avg"].copy()
     else:
         # Group by variable to get min/max values
@@ -158,7 +158,7 @@ class AggrFigure(MultiPanelFigure):
         layer: Optional[str] = None,
         use_raw: Optional[bool] = None,
         undo_log: bool = True,
-        scale_method: Optional[Literal["minmax", "max"]] = "max",
+        scale_method: Optional[Literal["minmax", "max", "none"]] = "max",
     ) -> pd.DataFrame:
         from collections import Counter
 
@@ -486,8 +486,9 @@ class AggrFigure(MultiPanelFigure):
             "cmap": self.color_map,
             "linewidth": self.edge_linewidth,
             "norm": self.cnorm,
-            "marker": self.dot_marker,
         }
+        if self.flavor == "dot":
+            plot_kwargs["marker"] = self.dot_marker
 
         # Determine which columns to use for x and y axis
         x_col = "conj_var" if self.gk_is_conj else "variable"
@@ -654,7 +655,7 @@ class PBAggrFigure(AggrFigure):
         layer: Optional[str] = None,
         use_raw: Optional[bool] = None,
         undo_log: bool = True,
-        scale_method: Optional[Literal["minmax", "max"]] = "max",
+        scale_method: Optional[Literal["minmax", "max", "none"]] = "max",
         pb_group: str = "sample",
     ) -> pd.DataFrame:
         from collections import Counter
@@ -756,7 +757,7 @@ def aggr(
     layer: Optional[str] = None,
     use_raw: Optional[bool] = None,
     undo_log: bool = True,
-    scale_method: Optional[Literal["minmax", "max"]] = "max",
+    scale_method: Optional[Literal["minmax", "max", "none"]] = "max",
     flavor: Literal["dot", "matrix"] = "dot",
     swap_axis: bool = False,
     fig: Optional[mpl.figure.Figure] = None,

@@ -15,7 +15,6 @@ from .._utilities import RandomState, update_config
 
 # Constants
 TEXT_SEP: str = "@"
-LEGEND_NROWS_MAX: int = 12
 MPL_PARAMETER_NAMES: Dict[str, Iterable[str]] = dict(
     lw=["linewidth", "linewidths", "lw"],
     lc=["linecolor", "linecolors", "lc"],
@@ -172,6 +171,7 @@ class BaseFigure:
             title_fontsize=get_default_legend_fontsize(),
         )
     )
+    legend_nrows: int = 12
 
     # Size and layout settings
     figsize: Tuple[float, float] = field(default_factory=get_default_figsize)
@@ -665,7 +665,7 @@ class BaseFigure:
             _handles = _handles[:n]
             _labels = _labels[:n]
         _title = title if title is not None else _legend.get_title().get_text()
-        _ncols = min(3, int(np.ceil(len(_handles) / LEGEND_NROWS_MAX)))
+        _ncols = min(3, int(np.ceil(len(_handles) / self.legend_nrows)))
 
         params = dict(kwargs)
         for k, v in self.legend_params.copy().items():

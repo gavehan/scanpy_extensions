@@ -396,6 +396,7 @@ def annot_emb(
     basis: Optional[str] = None,
     title: Optional[Union[bool, str, Iterable[str]]] = True,
     do_textloc: bool = True,
+    small_area_threshold: float = 5e-2,
     label_kwargs: Mapping[str, Any] = MappingProxyType({}),
     textloc_kwargs: Mapping[str, Any] = MappingProxyType({}),
     ax: Optional[mpl.axes.Axes] = None,
@@ -443,6 +444,7 @@ def annot_emb(
         ),
         label_params,
     )
+    update_config("zorder", 1e6, label_params)
 
     textloc_params = dict(textloc_kwargs)
     update_config("linewidth", efig.edge_linewidth, textloc_params)
@@ -490,7 +492,7 @@ def annot_emb(
             group_sizes[c] = ConvexHull(_emb_pos).volume
         group_sizes = pd.Series(group_sizes) / emb_range
         print(group_sizes)
-        group_sizes = group_sizes < 5e-2
+        group_sizes = group_sizes < small_area_threshold
 
         large_groups = group_sizes.index[~group_sizes]
         if len(large_groups) > 0:

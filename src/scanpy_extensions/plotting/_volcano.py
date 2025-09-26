@@ -139,7 +139,11 @@ def volcano(
     if add_annot:
         import textalloc as ta
 
-        _df = df.sort_values(_annot_sort_key).tail(annot_n)
+        _df = (
+            df.sort_values(_annot_sort_key)
+            .dropna(subset=[lfc_key, neg_log_pval_key])
+            .tail(annot_n)
+        )
         _df["gene"] = _df.index if gene_key == "index" else _df[gene_key]
         ta.allocate(
             ax=cur_ax,
